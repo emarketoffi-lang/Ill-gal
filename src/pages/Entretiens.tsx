@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +8,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Vote, ThumbsUp, ThumbsDown } from "lucide-react";
-import type { Tables } from "@/integrations/supabase/types";
 
-type EntretienWithVotes = Tables<"entretiens"> & { votes: Tables<"votes">[] };
+interface VoteRecord {
+  id: string;
+  entretien_id: string;
+  user_id: string;
+  vote: boolean;
+}
+
+interface Entretien {
+  id: string;
+  candidate_name: string;
+  group_name?: string;
+  summary: string;
+  user_id: string;
+  created_at: string;
+  status: "en_attente" | "accepte" | "refuse";
+  votes: VoteRecord[];
+}
 
 export default function Entretiens() {
   const { user, role } = useAuth();
-  const [items, setItems] = useState<EntretienWithVotes[]>([]);
+  const [items, setItems] = useState<Entretien[]>([]);
   const [open, setOpen] = useState(false);
   const [candidateName, setCandidateName] = useState("");
   const [groupName, setGroupName] = useState("");
@@ -24,27 +38,79 @@ export default function Entretiens() {
   const canCreate = role === "admin" || role === "responsable";
   const canVote = role === "admin" || role === "responsable";
 
-  const fetch_ = async () => {
-    const { data } = await supabase.from("entretiens").select("*, votes(*)").order("created_at", { ascending: false });
-    if (data) setItems(data as EntretienWithVotes[]);
-  };
-  useEffect(() => { fetch_(); }, []);
-
-  const handleSubmit = async () => {
-    if (!candidateName.trim() || !summary.trim()) { toast.error("Champs requis"); return; }
-    const { error } = await supabase.from("entretiens").insert({ candidate_name: candidateName, group_name: groupName || null, summary, user_id: user!.id });
-    if (error) toast.error(error.message); else { toast.success("Entretien publié"); setOpen(false); setCandidateName(""); setGroupName(""); setSummary(""); fetch_(); }
-  };
-
-  const handleVote = async (entretienId: string, voteValue: boolean) => {
-    const existing = items.find(e => e.id === entretienId)?.votes.find(v => v.user_id === user?.id);
-    if (existing) {
-      const { error } = await supabase.from("votes").update({ vote: voteValue }).eq("id", existing.id);
-      if (error) toast.error(error.message); else fetch_();
-    } else {
-      const { error } = await supabase.from("votes").insert({ entretien_id: entretienId, user_id: user!.id, vote: voteValue });
-      if (error) toast.error(error.message); else fetch_();
+  const loadItems = () => {
+    const saved = localStorage.getItem("underworld_entretiens");
+    if (saved) {
+      try {
+        setItems(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error loading entretiens:", e);
+      }
     }
+  };
+
+  useEffect(() => {
+    loadItems();
+
+    const handleEntretienUpdated = (event: any) => {
+      setItems(event.detail);
+    };
+
+    window.addEventListener("entretienUpdated", handleEntretienUpdated);
+    return () => window.removeEventListener("entretienUpdated", handleEntretienUpdated);
+  }, []);
+
+  const handleSubmit = () => {
+    if (!candidateName.trim() || !summary.trim()) {
+      toast.error("Champs requis");
+      return;
+    }
+
+    const newEntretien: Entretien = {
+      id: Date.now().toString(),
+      candidate_name: candidateName,
+      group_name: groupName || undefined,
+      summary,
+      user_id: user!.id,
+      created_at: new Date().toISOString(),
+      status: "en_attente",
+      votes: [],
+    };
+
+    const updated = [...items, newEntretien];
+    setItems(updated);
+    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
+
+    toast.success("Entretien publié");
+    setOpen(false);
+    setCandidateName("");
+    setGroupName("");
+    setSummary("");
+  };
+
+  const handleVote = (entretienId: string, voteValue: boolean) => {
+    const updated = items.map((e) => {
+      if (e.id === entretienId) {
+        const existing = e.votes.find((v) => v.user_id === user?.id);
+        if (existing) {
+          return {
+            ...e,
+            votes: e.votes.map((v) => (v.id === existing.id ? { ...v, vote: voteValue } : v)),
+          };
+        } else {
+          return {
+            ...e,
+            votes: [...e.votes, { id: Date.now().toString(), entretien_id: entretienId, user_id: user!.id, vote: voteValue }],
+          };
+        }
+      }
+      return e;
+    });
+
+    setItems(updated);
+    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
   };
 
   return (
@@ -72,9 +138,9 @@ export default function Entretiens() {
 
       <div className="space-y-4">
         {items.map((e) => {
-          const yesCount = e.votes.filter(v => v.vote).length;
-          const noCount = e.votes.filter(v => !v.vote).length;
-          const myVote = e.votes.find(v => v.user_id === user?.id);
+          const yesCount = e.votes.filter((v) => v.vote).length;
+          const noCount = e.votes.filter((v) => !v.vote).length;
+          const myVote = e.votes.find((v) => v.user_id === user?.id);
           const statusLabel = e.status === "en_attente" ? "En attente" : e.status === "accepte" ? "Accepté" : "Refusé";
           const statusClass = e.status === "accepte" ? "bg-green-500/20 text-green-400" : e.status === "refuse" ? "bg-red-500/20 text-red-400" : "bg-yellow-500/20 text-yellow-400";
 
