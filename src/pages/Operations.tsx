@@ -30,7 +30,7 @@ export default function Operations() {
   const [status, setStatus] = useState<"en_cours" | "terminee" | "annulee">("en_cours");
   const [opDate, setOpDate] = useState("");
 
-  const canCreate = role === "admin" || role === "responsable";
+  const canCreate = role === "admin" || role === "responsable" || role === "assistant";
 
   const loadOps = () => {
     const saved = localStorage.getItem("underworld_operations");
