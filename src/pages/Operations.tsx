@@ -17,6 +17,7 @@ interface Operation {
   status: "en_cours" | "terminee" | "annulee";
   operation_date?: string;
   user_id: string;
+  username: string;
   created_at: string;
 }
 
@@ -69,6 +70,7 @@ export default function Operations() {
         status,
         operation_date: opDate || undefined,
         user_id: user!.id,
+        username: user!.username,
         created_at: new Date().toISOString(),
       };
       updated = [...ops, newOp];
@@ -180,7 +182,7 @@ export default function Operations() {
               <div>
                 <CardTitle className="font-['Rajdhani'] text-lg">{op.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(op.created_at).toLocaleDateString("fr-FR")}
+                  {op.username} • {new Date(op.created_at).toLocaleDateString("fr-FR")}
                 </p>
               </div>
               <Badge className={statusColor[op.status] ?? ""}>
