@@ -12,7 +12,7 @@ interface LocalUser {
   username: string;
   discord_id: string;
   avatar_url?: string;
-  role: "admin" | "responsable" | "membre";
+  role: "admin" | "responsable" | "assistant";
 }
 
 export default function Auth() {
@@ -128,7 +128,7 @@ export default function Auth() {
         username: username.trim(),
         discord_id: discordId.trim(),
         avatar_url: avatarUrl.trim() || avatar || undefined,
-        role: email.trim() === "botqlr@gmail.com" ? "admin" : "membre",
+        role: email.trim() === "botqlr@gmail.com" ? "admin" : "assistant",
         password_hash: btoa(password),
       };
 

@@ -60,7 +60,7 @@ export function AppSidebar() {
           <Shield className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate font-['Rajdhani'] text-lg tracking-wide">{username ?? "Membre"}</p>
+          <p className="text-sm font-semibold truncate font-['Rajdhani'] text-lg tracking-wide">{username ?? "Assistant"}</p>
           <Badge variant={roleBadge as any} className="text-[10px] uppercase tracking-widest">
             {role ?? "membre"}
           </Badge>

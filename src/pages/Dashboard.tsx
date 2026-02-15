@@ -5,7 +5,7 @@ import { Target, Users, FileText, Vote, ArrowLeftRight, MessageCircle, Trash2, S
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
-type AppRole = "admin" | "responsable" | "membre";
+type AppRole = "admin" | "responsable" | "assistant";
 
 interface Person {
   id: string;
@@ -148,8 +148,8 @@ export default function Dashboard() {
                   Visualise uniquement · Pas de création
                 </p>
                 <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-                  {people.filter(p => p.role === "membre").length > 0 ? (
-                    people.filter(p => p.role === "membre").map(p => (
+                  {people.filter(p => p.role === "assistant").length > 0 ? (
+                    people.filter(p => p.role === "assistant").map(p => (
                       <p key={p.id} className="text-xs bg-black/20 px-2 py-1 rounded">
                         {p.username}
                       </p>

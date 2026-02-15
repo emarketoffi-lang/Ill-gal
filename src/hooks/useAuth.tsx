@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-type AppRole = "admin" | "responsable" | "membre";
+type AppRole = "admin" | "responsable" | "assistant";
 
 interface LocalUser {
   id: string;

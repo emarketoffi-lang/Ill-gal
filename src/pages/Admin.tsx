@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Shield, AlertCircle, ChevronDown, Lock, ClipboardList, Users, Trash2 } from "lucide-react";
 import { Navigate } from "react-router-dom";
 
-type AppRole = "admin" | "responsable" | "membre";
+type AppRole = "admin" | "responsable" | "assistant";
 
 interface Person {
   id: string;
@@ -22,7 +22,7 @@ export default function Admin() {
   const { role } = useAuth();
   const [people, setPeople] = useState<Person[]>([]);
   const [newUsername, setNewUsername] = useState("");
-  const [newRole, setNewRole] = useState<AppRole>("membre");
+  const [newRole, setNewRole] = useState<AppRole>("assistant");
 
   // Protection: only admins can access this page
   if (role !== "admin") {
@@ -66,7 +66,7 @@ export default function Admin() {
     window.dispatchEvent(new CustomEvent("peopleUpdated", { detail: updated }));
     
     setNewUsername("");
-    setNewRole("membre");
+    setNewRole("assistant");
     toast.success(`"${newUsername}" ajouté au rôle "${newRole}"`);
   };
 
@@ -136,7 +136,7 @@ export default function Admin() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="membre">Assistant</SelectItem>
+                <SelectItem value="assistant">Assistant</SelectItem>
                 <SelectItem value="responsable">Responsable</SelectItem>
                 <SelectItem value="admin">Référents</SelectItem>
               </SelectContent>
@@ -174,7 +174,7 @@ export default function Admin() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="membre">Assistant</SelectItem>
+                        <SelectItem value="assistant">Assistant</SelectItem>
                         <SelectItem value="responsable">Responsable</SelectItem>
                         <SelectItem value="admin">Référents</SelectItem>
                       </SelectContent>
@@ -267,8 +267,8 @@ export default function Admin() {
                   Visualise
                 </p>
                 <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-                  {people.filter(p => p.role === "membre").length > 0 ? (
-                    people.filter(p => p.role === "membre").map(p => (
+                  {people.filter(p => p.role === "assistant").length > 0 ? (
+                    people.filter(p => p.role === "assistant").map(p => (
                       <p key={p.id} className="text-xs bg-black/20 px-2 py-1 rounded">
                         {p.username}
                       </p>

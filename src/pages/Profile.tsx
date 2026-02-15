@@ -24,7 +24,7 @@ export default function Profile() {
         return <Badge variant="destructive">Référents</Badge>;
       case "responsable":
         return <Badge variant="secondary">Responsable</Badge>;
-      case "membre":
+      case "assistant":
         return <Badge variant="outline">Assistant</Badge>;
       default:
         return <Badge variant="outline">Utilisateur</Badge>;
