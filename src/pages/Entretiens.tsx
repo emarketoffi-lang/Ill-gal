@@ -22,6 +22,7 @@ interface Entretien {
   group_name?: string;
   summary: string;
   user_id: string;
+  username: string;
   created_at: string;
   status: "en_attente" | "accepte" | "refuse";
   votes: VoteRecord[];
@@ -72,6 +73,7 @@ export default function Entretiens() {
       group_name: groupName || undefined,
       summary,
       user_id: user!.id,
+      username: user!.username,
       created_at: new Date().toISOString(),
       status: "en_attente",
       votes: [],
@@ -175,7 +177,7 @@ export default function Entretiens() {
                 <div>
                   <CardTitle className="font-['Rajdhani'] text-lg">{e.candidate_name}</CardTitle>
                   {e.group_name && <p className="text-xs text-muted-foreground">Groupe: {e.group_name}</p>}
-                  <p className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("fr-FR")}</p>
+                  <p className="text-xs text-muted-foreground">{e.username} • {new Date(e.created_at).toLocaleDateString("fr-FR")}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={statusClass}>{statusLabel}</Badge>
