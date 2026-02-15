@@ -18,9 +18,19 @@ interface Person {
   discord_id?: string;
 }
 
+interface User {
+  id: string;
+  email: string;
+  username: string;
+  discord_id: string;
+  avatar_url?: string;
+  role: AppRole;
+}
+
 export default function Admin() {
   const { role } = useAuth();
   const [people, setPeople] = useState<Person[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [newUsername, setNewUsername] = useState("");
   const [newRole, setNewRole] = useState<AppRole>("assistant");
 
@@ -37,6 +47,16 @@ export default function Admin() {
         setPeople(JSON.parse(saved));
       } catch (e) {
         console.error("Error loading people:", e);
+      }
+    }
+
+    // Load users
+    const savedUsers = localStorage.getItem("underworld_users");
+    if (savedUsers) {
+      try {
+        setUsers(JSON.parse(savedUsers));
+      } catch (e) {
+        console.error("Error loading users:", e);
       }
     }
   }, []);
@@ -90,6 +110,13 @@ export default function Admin() {
     setPeople(updated);
     localStorage.setItem("underworld_people", JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("peopleUpdated", { detail: updated }));
+  };
+
+  const updateUserRole = (userId: string, newRole: AppRole) => {
+    const updated = users.map(u => u.id === userId ? { ...u, role: newRole } : u);
+    setUsers(updated);
+    localStorage.setItem("underworld_users", JSON.stringify(updated));
+    toast.success("Rôle mis à jour");
   };
 
   const getRoleBadge = (roleStr: string) => {
@@ -187,6 +214,48 @@ export default function Admin() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 bg-card/80 backdrop-blur">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Membres connectés
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {users.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8">
+              Aucun membre
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card/50">
+                  <div className="flex items-center gap-3 flex-1">
+                    {user.avatar_url && (
+                      <img src={user.avatar_url} alt={user.username} className="h-8 w-8 rounded-full" />
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{user.username}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </div>
+                  <Select value={user.role} onValueChange={(value) => updateUserRole(user.id, value as AppRole)}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="assistant">Assistant</SelectItem>
+                      <SelectItem value="responsable">Responsable</SelectItem>
+                      <SelectItem value="admin">Référents</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               ))}
             </div>
