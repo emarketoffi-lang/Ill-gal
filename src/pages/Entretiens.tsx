@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Vote, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Plus, Vote, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
 
 interface VoteRecord {
   id: string;
@@ -113,6 +113,31 @@ export default function Entretiens() {
     window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
   };
 
+  const handleDelete = (id: string) => {
+    const entretienToDelete = items.find((e) => e.id === id);
+    
+    // Supprimer l'entretien
+    const updated = items.filter((e) => e.id !== id);
+    setItems(updated);
+    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
+
+    // Ajouter à la corbeille
+    if (entretienToDelete) {
+      const corbeille = JSON.parse(localStorage.getItem("underworld_corbeille") ?? "[]");
+      const deletedItem = {
+        ...entretienToDelete,
+        deleted_at: new Date().toISOString(),
+        deleted_by: user?.username || "Admin",
+      };
+      corbeille.push(deletedItem);
+      localStorage.setItem("underworld_corbeille", JSON.stringify(corbeille));
+      window.dispatchEvent(new CustomEvent("corbeilleUpdated", { detail: corbeille }));
+    }
+
+    toast.success("Entretien supprimé");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -152,7 +177,14 @@ export default function Entretiens() {
                   {e.group_name && <p className="text-xs text-muted-foreground">Groupe: {e.group_name}</p>}
                   <p className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("fr-FR")}</p>
                 </div>
-                <Badge className={statusClass}>{statusLabel}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className={statusClass}>{statusLabel}</Badge>
+                  {role === "admin" && (
+                    <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(e.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">{e.summary}</p>

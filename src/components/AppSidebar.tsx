@@ -40,6 +40,7 @@ const navItems = [
 ];
 
 const adminItems = [
+  { title: "Corbeille", url: "/corbeille", icon: Trash2 },
   { title: "Gestion des rôles", url: "/admin", icon: Shield },
 ];
 

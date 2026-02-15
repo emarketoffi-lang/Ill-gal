@@ -15,6 +15,7 @@ import Entretiens from "./pages/Entretiens";
 import Echanges from "./pages/Echanges";
 import Discussion from "./pages/Discussion";
 import Dissolutions from "./pages/Dissolutions";
+import Corbeille from "./pages/Corbeille";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +54,7 @@ const App = () => (
               <Route path="/echanges" element={<Echanges />} />
               <Route path="/discussion" element={<Discussion />} />
               <Route path="/dissolutions" element={<Dissolutions />} />
+              <Route path="/corbeille" element={<Corbeille />} />
               <Route path="/admin" element={<Admin />} />
             </Route>
             <Route path="*" element={<NotFound />} />
