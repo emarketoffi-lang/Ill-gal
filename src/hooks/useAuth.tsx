@@ -32,23 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize default admin user if no users exist
-    const users = localStorage.getItem("underworld_users");
-    if (!users || JSON.parse(users).length === 0) {
-      const defaultAdmin: LocalUser = {
-        id: "admin_default",
-        email: "admin@underworld.local",
-        username: "Admin",
-        discord_id: "0",
-        role: "admin",
-      };
-      localStorage.setItem("underworld_users", JSON.stringify([{ ...defaultAdmin, password_hash: btoa("admin123") }]));
-      localStorage.setItem("underworld_current_user", JSON.stringify(defaultAdmin));
-      setUser(defaultAdmin);
-      setLoading(false);
-      return;
-    }
-
     const saved = localStorage.getItem("underworld_current_user");
     if (saved) {
       try {
