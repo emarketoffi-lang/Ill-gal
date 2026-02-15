@@ -1,74 +1,82 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Send, Trash2, MessageCircle } from "lucide-react";
 
-interface MessageWithProfile {
+interface Message {
   id: string;
   content: string;
   created_at: string;
+  username: string;
   user_id: string;
-  profiles: { username: string } | null;
 }
 
 export default function Discussion() {
   const { user, role } = useAuth();
-  const [messages, setMessages] = useState<MessageWithProfile[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [content, setContent] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const fetchMessages = async () => {
-    const { data } = await supabase
-      .from("messages")
-      .select("*")
-      .order("created_at", { ascending: true })
-      .limit(200);
-    if (data) {
-      // Fetch profiles for all unique user_ids
-      const userIds = [...new Set(data.map(m => m.user_id))];
-      const { data: profiles } = await supabase.from("profiles").select("user_id, username").in("user_id", userIds);
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p.username]) ?? []);
-      const withProfiles = data.map(m => ({ ...m, profiles: { username: profileMap.get(m.user_id) ?? "Inconnu" } }));
-      setMessages(withProfiles as MessageWithProfile[]);
-      return;
-    }
-    if (data) setMessages(data as unknown as MessageWithProfile[]);
-  };
-
+  // Load messages from localStorage
   useEffect(() => {
-    fetchMessages();
+    const saved = localStorage.getItem("underworld_messages");
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch (e) {
+        console.error("Error loading messages:", e);
+      }
+    }
 
-    const channel = supabase
-      .channel("messages-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
-        fetchMessages();
-      })
-      .subscribe();
+    // Listen for messages from other tabs/windows
+    const handleMessagesUpdated = (event: any) => {
+      setMessages(event.detail);
+    };
 
-    return () => { supabase.removeChannel(channel); };
+    window.addEventListener("messagesUpdated", handleMessagesUpdated);
+    return () => window.removeEventListener("messagesUpdated", handleMessagesUpdated);
   }, []);
 
+  // Auto-scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!content.trim()) return;
-    const { error } = await supabase.from("messages").insert({ content: content.trim(), user_id: user!.id });
-    if (error) toast.error(error.message);
+  const handleSend = () => {
+    if (!content.trim() || !user) return;
+
+    const newMessage: Message = {
+      id: Date.now().toString(),
+      content: content.trim(),
+      created_at: new Date().toISOString(),
+      username: user.username,
+      user_id: user.id,
+    };
+
+    const updated = [...messages, newMessage];
+    setMessages(updated);
+    localStorage.setItem("underworld_messages", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("messagesUpdated", { detail: updated }));
+
     setContent("");
+    toast.success("Message envoyé");
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("messages").delete().eq("id", id);
-    if (error) toast.error(error.message);
+  const handleDelete = (id: string) => {
+    const updated = messages.filter(m => m.id !== id);
+    setMessages(updated);
+    localStorage.setItem("underworld_messages", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("messagesUpdated", { detail: updated }));
+    toast.success("Message supprimé");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   return (
@@ -86,13 +94,15 @@ export default function Discussion() {
               <div className={`max-w-[70%] rounded-lg px-4 py-2 ${isOwn ? "bg-primary/20 border border-primary/30" : "bg-muted/50 border border-border/50"}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-xs font-semibold ${isOwn ? "text-primary" : "text-foreground"}`}>
-                    {m.profiles?.username ?? "Inconnu"}
+                    {m.username}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
                     {new Date(m.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   {role === "admin" && !isOwn && (
-                    <button onClick={() => handleDelete(m.id)} className="text-destructive/50 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
+                    <button onClick={() => handleDelete(m.id)} className="text-destructive/50 hover:text-destructive">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
                   )}
                 </div>
                 <p className="text-sm">{m.content}</p>
