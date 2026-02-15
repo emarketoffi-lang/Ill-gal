@@ -13,6 +13,7 @@ interface Rapport {
   author_name: string;
   summary: string;
   rapport_date: string;
+  created_by: string;
   created_at: string;
 }
 
@@ -54,6 +55,7 @@ export default function Rapports() {
         author_name: authorName,
         summary,
         rapport_date: rapportDate,
+        created_by: user!.username,
         created_at: new Date().toISOString(),
       };
       const updated = [newRapport, ...items];
@@ -114,7 +116,7 @@ export default function Rapports() {
             <CardHeader className="flex flex-row items-start justify-between pb-2">
               <div>
                 <CardTitle className="font-['Rajdhani'] text-lg">{r.author_name}</CardTitle>
-                <p className="text-xs text-muted-foreground">{new Date(r.rapport_date).toLocaleDateString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">{r.created_by} • {new Date(r.rapport_date).toLocaleDateString("fr-FR")}</p>
               </div>
               {role === "admin" && (
                 <div className="flex gap-1">
