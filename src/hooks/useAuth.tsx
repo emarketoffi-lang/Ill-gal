@@ -75,6 +75,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             .eq("user_id", session.user.id)
             .maybeSingle();
           profile = newProfile;
+
+          // Recharger aussi le rôle car le trigger l'a peut-être créé
+          const { data: newRole } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          role = newRole;
         }
 
         // Créer rôle si manquant
