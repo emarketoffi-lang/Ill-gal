@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Send, Trash2, MessageCircle } from "lucide-react";
+import { syncToSupabase } from "@/lib/supabaseSync";
 
 interface Message {
   id: string;
@@ -58,6 +59,7 @@ export default function Discussion() {
     const updated = [...messages, newMessage];
     setMessages(updated);
     localStorage.setItem("underworld_messages", JSON.stringify(updated));
+    syncToSupabase("messages", newMessage);
     window.dispatchEvent(new CustomEvent("messagesUpdated", { detail: updated }));
 
     setContent("");
@@ -68,6 +70,7 @@ export default function Discussion() {
     const updated = messages.filter(m => m.id !== id);
     setMessages(updated);
     localStorage.setItem("underworld_messages", JSON.stringify(updated));
+    syncToSupabase("messages", { id, deleted: true });
     window.dispatchEvent(new CustomEvent("messagesUpdated", { detail: updated }));
     toast.success("Message supprimé");
   };

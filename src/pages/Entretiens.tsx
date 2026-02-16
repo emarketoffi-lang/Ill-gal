@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Vote, ThumbsUp, ThumbsDown, Trash2 } from "lucide-react";
+import { syncToSupabase } from "@/lib/supabaseSync";
 
 interface VoteRecord {
   id: string;
@@ -81,8 +82,7 @@ export default function Entretiens() {
 
     const updated = [...items, newEntretien];
     setItems(updated);
-    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));
-    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
+    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));    syncToSupabase(\"entretiens\", newEntretien);    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
 
     toast.success("Entretien publié");
     setOpen(false);
@@ -122,6 +122,7 @@ export default function Entretiens() {
     const updated = items.filter((e) => e.id !== id);
     setItems(updated);
     localStorage.setItem("underworld_entretiens", JSON.stringify(updated));
+    syncToSupabase("entretiens", { id, deleted: true });
     window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
 
     // Ajouter à la corbeille

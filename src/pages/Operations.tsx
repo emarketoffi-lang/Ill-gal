@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Target } from "lucide-react";
+import { syncToSupabase } from "@/lib/supabaseSync";
 
 interface Operation {
   id: string;
@@ -79,6 +80,8 @@ export default function Operations() {
 
     setOps(updated);
     localStorage.setItem("underworld_operations", JSON.stringify(updated));
+    // Sync to Supabase
+    updated.forEach(op => syncToSupabase("operations", op));
     setOpen(false);
     resetForm();
   };
@@ -87,6 +90,8 @@ export default function Operations() {
     const updated = ops.filter((op) => op.id !== id);
     setOps(updated);
     localStorage.setItem("underworld_operations", JSON.stringify(updated));
+    // Sync to Supabase
+    syncToSupabase("operations", { id, deleted: true });
     toast.success("Supprimé");
   };
 

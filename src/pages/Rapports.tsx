@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, FileText, Trash2 } from "lucide-react";
+import { syncToSupabase } from "@/lib/supabaseSync";
 
 interface Rapport {
   id: string;
@@ -48,6 +49,7 @@ export default function Rapports() {
       const updated = items.map(r => r.id === editing.id ? { ...r, author_name: authorName, summary, rapport_date: rapportDate } : r);
       setItems(updated);
       localStorage.setItem("underworld_rapports", JSON.stringify(updated));
+      updated.forEach(r => syncToSupabase("rapports", r));
       toast.success("Mis à jour");
     } else {
       const newRapport: Rapport = {
@@ -61,6 +63,7 @@ export default function Rapports() {
       const updated = [newRapport, ...items];
       setItems(updated);
       localStorage.setItem("underworld_rapports", JSON.stringify(updated));
+      syncToSupabase("rapports", newRapport);
       toast.success("Rapport ajouté");
     }
     reset();
@@ -70,6 +73,7 @@ export default function Rapports() {
     const updated = items.filter(r => r.id !== id);
     setItems(updated);
     localStorage.setItem("underworld_rapports", JSON.stringify(updated));
+    syncToSupabase("rapports", { id, deleted: true });
     toast.success("Supprimé");
   };
 

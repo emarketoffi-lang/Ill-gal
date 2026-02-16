@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "admin" | "responsable" | "assistant";
+type AppRole = "admin" | "responsable" | "assistant";
 
-export interface LocalUser {
+interface LocalUser {
   id: string;
   email: string;
   username: string;
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: session.user.email || "",
             username: profile.username,
             discord_id: profile.discord_id || "",
-            avatar_url: profile.avatar_url || undefined,
+            avatar_url: profile.avatar_url,
             role: (roleData.role as AppRole) || "assistant",
           });
         }
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: session.user.email || "",
             username: profile.username,
             discord_id: profile.discord_id || "",
-            avatar_url: profile.avatar_url || undefined,
+            avatar_url: profile.avatar_url,
             role: (roleData.role as AppRole) || "assistant",
           });
         }

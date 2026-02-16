@@ -5,15 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-interface LocalUser {
-  id: string;
-  email: string;
-  username: string;
-  discord_id: string;
-  avatar_url?: string;
-  role: "admin" | "responsable" | "assistant";
-}
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -66,93 +58,103 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    if (isLogin) {
-      // Login mode
-      const users = JSON.parse(localStorage.getItem("underworld_users") || "[]") as LocalUser[];
-      const user = users.find(u => u.email === email && u.password_hash === btoa(password));
-      
-      if (!user) {
-        toast.error("Email ou mot de passe incorrect");
-        setLoading(false);
-        return;
-      }
+    try {
+      if (isLogin) {
+        // Login avec Supabase Auth
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password,
+        });
 
-      const currentUser = { ...user };
-      delete (currentUser as any).password_hash;
-      
-      // botqlr@gmail.com est toujours admin
-      if (email === "botqlr@gmail.com") {
-        currentUser.role = "admin";
-        // Update the user in the list too
-        const updatedUsers = users.map(u => u.email === email ? { ...u, role: "admin" } : u);
-        localStorage.setItem("underworld_users", JSON.stringify(updatedUsers));
-        window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updatedUsers }));
+        if (error) {
+          toast.error(error.message || "Erreur de connexion");
+          setLoading(false);
+          return;
+        }
+
+        toast.success("Connexion réussie");
+        reset();
+        navigate("/");
       } else {
-        window.dispatchEvent(new CustomEvent("usersUpdated", { detail: users }));
-      }
-      
-      localStorage.setItem("underworld_current_user", JSON.stringify(currentUser));
-      toast.success("Connexion réussie");
-      reset();
-      navigate("/");
-    } else {
-      // Signup mode
-      if (!username.trim()) {
-        toast.error("Le nom d'utilisateur est requis");
-        setLoading(false);
-        return;
-      }
-      if (!discordId.trim()) {
-        toast.error("L'ID Discord est requis");
-        setLoading(false);
-        return;
-      }
-      if (!email.trim() || !password.trim()) {
-        toast.error("Email et mot de passe requis");
-        setLoading(false);
-        return;
-      }
-      if (password.length < 6) {
-        toast.error("Le mot de passe doit faire au moins 6 caractères");
-        setLoading(false);
-        return;
-      }
+        // Signup
+        if (!username.trim()) {
+          toast.error("Le nom d'utilisateur est requis");
+          setLoading(false);
+          return;
+        }
+        if (!discordId.trim()) {
+          toast.error("L'ID Discord est requis");
+          setLoading(false);
+          return;
+        }
+        if (!email.trim() || !password.trim()) {
+          toast.error("Email et mot de passe requis");
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          toast.error("Le mot de passe doit faire au moins 6 caractères");
+          setLoading(false);
+          return;
+        }
 
-      const users = JSON.parse(localStorage.getItem("underworld_users") || "[]") as any[];
-      
-      // Check if user already exists
-      if (users.some(u => u.email === email)) {
-        toast.error("Cet email est déjà utilisé");
-        setLoading(false);
-        return;
+        // Créer le compte Supabase
+        const { error: signUpError, data: signUpData } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password,
+          options: {
+            data: {
+              username: username.trim(),
+            },
+          },
+        });
+
+        if (signUpError) {
+          toast.error(signUpError.message || "Erreur lors de la création du compte");
+          setLoading(false);
+          return;
+        }
+
+        if (!signUpData.user) {
+          toast.error("Erreur: impossible de créer le compte");
+          setLoading(false);
+          return;
+        }
+
+        // Créer le profil
+        const { error: profileError } = await supabase.from("profiles").insert({
+          user_id: signUpData.user.id,
+          username: username.trim(),
+          avatar_url: avatarUrl.trim() || avatar || undefined,
+          discord_id: discordId.trim(),
+        });
+
+        if (profileError) {
+          toast.error("Erreur lors de la création du profil");
+          setLoading(false);
+          return;
+        }
+
+        // Créer le rôle par défaut (assistant)
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: signUpData.user.id,
+          role: "assistant",
+        });
+
+        if (roleError) {
+          console.error("Erreur lors de la création du rôle:", roleError);
+        }
+
+        toast.success("Compte créé avec succès");
+        reset();
+        setIsLogin(true);
       }
-
-      // Create new user - botqlr@gmail.com est toujours admin
-      const newUser: any = {
-        id: Date.now().toString(),
-        email: email.trim(),
-        username: username.trim(),
-        discord_id: discordId.trim(),
-        avatar_url: avatarUrl.trim() || avatar || undefined,
-        role: email.trim() === "botqlr@gmail.com" ? "admin" : "assistant",
-        password_hash: btoa(password),
-      };
-
-      users.push(newUser);
-      localStorage.setItem("underworld_users", JSON.stringify(users));
-      window.dispatchEvent(new CustomEvent("usersUpdated", { detail: users }));
-
-      // Log in the new user
-      const currentUser = { ...newUser };
-      delete currentUser.password_hash;
-      localStorage.setItem("underworld_current_user", JSON.stringify(currentUser));
-
-      toast.success("Compte créé avec succès");
-      reset();
-      navigate("/");
+    } catch (error: any) {
+      console.error("Erreur:", error);
+      toast.error(error.message || "Une erreur est survenue");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
