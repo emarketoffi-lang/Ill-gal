@@ -17,78 +17,82 @@ interface AuthContextType {
   loading: boolean;
   role: AppRole | null;
   username: string | null;
-  signOut: () => void;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  loading: false,
+  loading: true,
   role: null,
   username: null,
-  signOut: () => {},
+  signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // Load from localStorage immediately (no loading needed)
-  const [user, setUser] = useState<LocalUser | null>(() => {
-    const stored = localStorage.getItem("currentUser");
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return null;
+  const [user, setUser] = useState<LocalUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Load localStorage safely
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("currentUser");
+      if (stored) {
+        try {
+          setUser(JSON.parse(stored));
+        } catch {
+          localStorage.removeItem("currentUser");
+        }
       }
     }
-    return null;
-  });
+  }, []);
 
   useEffect(() => {
-    // Sync with Supabase if configured, but don't block rendering on it
-    const supabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-    
-    if (!supabaseConfigured) {
-      return; // Just use localStorage
-    }
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
 
-    // Non-blocking Supabase sync
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        // Try to sync user data, but don't block if it fails
-        supabase
+        if (!session?.user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", session.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            if (profile) {
-              supabase
-                .from("user_roles")
-                .select("role")
-                .eq("user_id", session.user.id)
-                .single()
-                .then(({ data: roleData }) => {
-                  if (roleData) {
-                    const userData: LocalUser = {
-                      id: session.user.id,
-                      email: session.user.email || "",
-                      username: profile.username,
-                      discord_id: profile.discord_id || "",
-                      avatar_url: profile.avatar_url || undefined,
-                      role: (roleData.role as AppRole) || "assistant",
-                    };
-                    setUser(userData);
-                    localStorage.setItem("currentUser", JSON.stringify(userData));
-                  }
-                })
-                .catch((e) => console.warn("Role fetch error:", e));
-            }
-          })
-          .catch((e) => console.warn("Profile fetch error:", e));
+          .single();
+
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .single();
+
+        if (profile && roleData) {
+          const userData: LocalUser = {
+            id: session.user.id,
+            email: session.user.email || "",
+            username: profile.username,
+            discord_id: profile.discord_id || "",
+            avatar_url: profile.avatar_url || undefined,
+            role: (roleData.role as AppRole) || "assistant",
+          };
+
+          setUser(userData);
+          localStorage.setItem("currentUser", JSON.stringify(userData));
+        }
+      } catch (error) {
+        console.warn("Auth sync error:", error);
+      } finally {
+        setLoading(false);
       }
-    }).catch((e) => console.warn("Session fetch error:", e));
+    };
+
+    initSession();
   }, []);
 
-  const signOut = () => {
+  const signOut = async () => {
+    await supabase.auth.signOut();
     setUser(null);
     localStorage.removeItem("currentUser");
   };
@@ -97,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        loading: false,
+        loading,
         role: user?.role || null,
         username: user?.username || null,
         signOut,
