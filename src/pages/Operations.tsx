@@ -17,6 +17,7 @@ interface Operation {
   description?: string;
   status: "en_cours" | "terminee" | "annulee";
   operation_date?: string;
+  participants?: string[];
   user_id: string;
   username: string;
   created_at: string;
@@ -31,6 +32,7 @@ export default function Operations() {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState<"en_cours" | "terminee" | "annulee">("en_cours");
   const [opDate, setOpDate] = useState("");
+  const [participants, setParticipants] = useState("");
 
   const canCreate = role === "admin" || role === "responsable" || role === "assistant";
 
@@ -55,11 +57,16 @@ export default function Operations() {
       return;
     }
 
+    const participantList = participants
+      .split(",")
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0);
+
     let updated: Operation[];
     if (editing) {
       updated = ops.map((op) =>
         op.id === editing.id
-          ? { ...op, title, description, status, operation_date: opDate || undefined }
+          ? { ...op, title, description, status, operation_date: opDate || undefined, participants: participantList }
           : op
       );
       toast.success("Mis à jour");
@@ -70,6 +77,7 @@ export default function Operations() {
         description,
         status,
         operation_date: opDate || undefined,
+        participants: participantList,
         user_id: user!.id,
         username: user!.username,
         created_at: new Date().toISOString(),
@@ -100,6 +108,7 @@ export default function Operations() {
     setDescription("");
     setStatus("en_cours");
     setOpDate("");
+    setParticipants("");
     setEditing(null);
   };
 
@@ -109,6 +118,7 @@ export default function Operations() {
     setDescription(op.description ?? "");
     setStatus(op.status);
     setOpDate(op.operation_date?.split("T")[0] ?? "");
+    setParticipants(op.participants?.join(", ") ?? "");
     setOpen(true);
   };
 
@@ -161,6 +171,12 @@ export default function Operations() {
                   onChange={(e) => setOpDate(e.target.value)}
                   className="bg-muted/50"
                 />
+                <Input
+                  placeholder="Participants (séparés par des virgules)"
+                  value={participants}
+                  onChange={(e) => setParticipants(e.target.value)}
+                  className="bg-muted/50"
+                />
                 <Select value={status} onValueChange={(value) => setStatus(value as "en_cours" | "terminee" | "annulee")}>
                   <SelectTrigger className="bg-muted/50">
                     <SelectValue />
@@ -197,8 +213,13 @@ export default function Operations() {
             <CardContent>
               {op.description && <p className="text-sm text-muted-foreground mb-3">{op.description}</p>}
               {op.operation_date && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground mb-2">
                   📅 {new Date(op.operation_date).toLocaleDateString("fr-FR")}
+                </p>
+              )}
+              {op.participants && op.participants.length > 0 && (
+                <p className="text-xs text-muted-foreground mb-3">
+                  👥 {op.participants.join(", ")}
                 </p>
               )}
               {op.user_id === user?.id && (

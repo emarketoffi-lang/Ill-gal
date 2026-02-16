@@ -74,7 +74,11 @@ export default function Auth() {
 
         toast.success("Connexion réussie");
         reset();
-        navigate("/");
+        
+        // Attendre que le AuthProvider charge les données utilisateur
+        setTimeout(() => {
+          navigate("/");
+        }, 300);
       } else {
         // Signup
         if (!username.trim()) {
@@ -135,10 +139,10 @@ export default function Auth() {
           return;
         }
 
-        // Créer le rôle par défaut (assistant)
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: signUpData.user.id,
-          role: "assistant",
+        // Créer le rôle par défaut (assistant) via fonction RPC
+        const { error: roleError } = await supabase.rpc("create_user_role", {
+          p_user_id: signUpData.user.id,
+          p_role: "assistant",
         });
 
         if (roleError) {
