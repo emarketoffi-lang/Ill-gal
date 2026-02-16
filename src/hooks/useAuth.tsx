@@ -35,110 +35,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    const loadUser = async (session = null) => {
-      try {
-        // Si pas de session passéé, charger depuis Supabase
-        if (!session) {
-          const { data } = await supabase.auth.getSession();
-          session = data.session;
+    const loadUser = async (session: any) => {
+      if (!session?.user?.id) {
+        console.log("❌ No authenticated user");
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
         }
-        
-        console.log("📡 [AUTH] Session:", session?.user?.id || "none");
+        return;
+      }
 
-        if (!session?.user?.id) {
-          console.log("❌ No authenticated user");
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-          }
-          return;
-        }
+      try {
+        console.log("📡 [AUTH] Loading user:", session.user.id);
 
         // Charger profil + rôle en parallèle
-        let { data: profile, error: pErr } = await supabase
+        let { data: profile } = await supabase
           .from("profiles")
           .select("*")
           .eq("user_id", session.user.id)
           .maybeSingle();
 
-        let { data: role, error: rErr } = await supabase
+        let { data: role } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", session.user.id)
           .maybeSingle();
 
-        console.log("📡 [AUTH] Profile:", profile?.username, "Role:", role?.role, "Errors:", pErr, rErr);
+        // Créer profile si manquant
+        if (!profile) {
+          console.log("⚠️ [AUTH] Creating missing profile");
+          await supabase.from("profiles").insert({
+            user_id: session.user.id,
+            username: session.user.email?.split("@")[0] || "user",
+          });
+          
+          const { data: newProfile } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          profile = newProfile;
+        }
 
-        if (mounted) {
-          if (!profile) {
-            console.log("⚠️ [AUTH] Creating missing profile for:", session.user.email);
-            const { error: createProfileErr } = await supabase.from("profiles").insert({
-              user_id: session.user.id,
-              username: session.user.email?.split("@")[0] || "user",
-            });
-            console.log("Result:", createProfileErr ? "Error: " + createProfileErr.message : "✅ Profile created");
-            
-            // Recharger après création
-            const result = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("user_id", session.user.id)
-              .maybeSingle();
-            profile = result.data;
-          }
+        // Créer rôle si manquant
+        if (!role) {
+          console.log("⚠️ [AUTH] Creating missing role");
+          await supabase.rpc("create_user_role", {
+            p_user_id: session.user.id,
+            p_role: "assistant",
+          });
+          
+          const { data: newRole } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          role = newRole;
+        }
 
-          if (!role) {
-            console.log("⚠️ [AUTH] Creating missing role for:", session.user.id);
-            const { error: createRoleErr } = await supabase.rpc("create_user_role", {
-              p_user_id: session.user.id,
-              p_role: "assistant",
-            });
-            console.log("Result:", createRoleErr ? "Error: " + createRoleErr.message : "✅ Role created");
-            
-            // Recharger après création
-            const result = await supabase
-              .from("user_roles")
-              .select("role")
-              .eq("user_id", session.user.id)
-              .maybeSingle();
-            role = result.data;
-          }
-
-          if (profile && role) {
-            const userData: LocalUser = {
-              id: session.user.id,
-              email: session.user.email || "",
-              username: profile.username,
-              discord_id: profile.discord_id || "",
-              avatar_url: profile.avatar_url || undefined,
-              role: (role.role as AppRole) || "assistant",
-            };
-            console.log("✅ [AUTH] User loaded:", userData.username);
-            setUser(userData);
-          } else {
-            console.log("❌ [AUTH] Still missing profile or role after creation");
-            setUser(null);
-          }
-          setLoading(false);
+        if (mounted && profile && role) {
+          const userData: LocalUser = {
+            id: session.user.id,
+            email: session.user.email || "",
+            username: profile.username,
+            discord_id: profile.discord_id || "",
+            avatar_url: profile.avatar_url || undefined,
+            role: (role.role as AppRole) || "assistant",
+          };
+          console.log("✅ [AUTH] User loaded:", userData.username);
+          setUser(userData);
+        } else if (mounted) {
+          console.log("❌ [AUTH] Profile or role still missing");
+          setUser(null);
         }
       } catch (err) {
         console.error("❌ [AUTH] Error:", err);
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-        }
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
       }
     };
 
-    // Charger immédiatement au montage
-    loadUser();
-
-    // Puis écouter les changements
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Écouter les changements
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("📡 [AUTH] Event:", event);
       
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        await loadUser(session);
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+        loadUser(session);
       } else if (event === "SIGNED_OUT") {
         if (mounted) {
           setUser(null);

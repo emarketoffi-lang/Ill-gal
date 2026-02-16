@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Shield, AlertCircle, ChevronDown, Lock, ClipboardList, Users, Trash2 } from "lucide-react";
+import { Shield, AlertCircle, ChevronDown, Lock, ClipboardList, Users, Trash2, Search } from "lucide-react";
 import { Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 type AppRole = "admin" | "responsable" | "assistant";
 
@@ -27,14 +28,24 @@ interface User {
   role: AppRole;
 }
 
+interface SupabaseUser {
+  id: string;
+  email: string;
+  username: string;
+  role: AppRole;
+}
+
 export default function Admin() {
   const { role } = useAuth();
+  console.log("🔵 [Admin] Rendering with role:", role);
   const [people, setPeople] = useState<Person[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [supUsers, setSupUsers] = useState<SupabaseUser[]>([]);
   const [newUsername, setNewUsername] = useState("");
   const [newRole, setNewRole] = useState<AppRole>("assistant");
   const [searchEmail, setSearchEmail] = useState("");
-  const [searchRole, setSearchRole] = useState<AppRole>("assistant");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedUserRole, setSelectedUserRole] = useState<AppRole>("assistant");
 
   // Protection: only admins can access this page
   if (role !== "admin") {
@@ -164,6 +175,51 @@ export default function Admin() {
     toast.success("Rôle mis à jour");
   };
 
+  const searchAndUpdateUserRole = async () => {
+    if (!searchEmail.trim()) {
+      toast.error("L'email est requis");
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      // Chercher par username dans profiles
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, username")
+        .ilike("username", searchEmail.trim())
+        .limit(1);
+
+      if (!profiles || profiles.length === 0) {
+        toast.error("Utilisateur non trouvé");
+        setSearchLoading(false);
+        return;
+      }
+
+      const userId = profiles[0].user_id;
+
+      // Mettre à jour le rôle dans Supabase
+      const { error: updateError } = await supabase
+        .from("user_roles")
+        .update({ role: selectedUserRole })
+        .eq("user_id", userId);
+
+      if (updateError) {
+        console.error("Update error:", updateError);
+        toast.error("Erreur: " + updateError.message);
+        return;
+      }
+
+      setSearchEmail("");
+      toast.success(`✅ Rôle changé en "${selectedUserRole}" pour ${profiles[0].username}`);
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Une erreur est survenue");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   const assignPermissionByEmail = () => {
     if (!searchEmail.trim()) {
       toast.error("L'email est requis");
@@ -202,40 +258,6 @@ export default function Admin() {
         }
       }
     }
-
-    if (!user) {
-      toast.error("Utilisateur non trouvé avec cet email");
-      return;
-    }
-
-    // Ajouter à la liste locale s'il n'y est pas
-    if (!users.find(u => u.id === user!.id)) {
-      setUsers([...users, user]);
-    }
-
-    const updated = users.map(u => u.id === user!.id ? { ...u, role: searchRole } : u);
-    setUsers(updated);
-    localStorage.setItem("underworld_users", JSON.stringify(updated));
-    
-    // Also update current user if it's the same user
-    const currentUserStr = localStorage.getItem("underworld_current_user");
-    if (currentUserStr) {
-      try {
-        const currentUser = JSON.parse(currentUserStr) as User;
-        if (currentUser.id === user!.id) {
-          const updatedCurrentUser = { ...currentUser, role: searchRole };
-          localStorage.setItem("underworld_current_user", JSON.stringify(updatedCurrentUser));
-        }
-      } catch (e) {
-        console.error("Error updating current user:", e);
-      }
-    }
-    
-    window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updated }));
-    
-    toast.success(`Permissions données à ${user.username}`);
-    setSearchEmail("");
-    setSearchRole("assistant");
   };
 
   const getRoleBadge = (roleStr: string) => {
@@ -288,6 +310,47 @@ export default function Admin() {
               </SelectContent>
             </Select>
             <Button onClick={addPerson}>Ajouter</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 bg-card/80 backdrop-blur border-blue-500/30 bg-blue-500/5">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2 text-blue-400">
+            <Search className="h-4 w-4" />
+            Changer le rôle d'un utilisateur
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Cherche un utilisateur par son email ou username, puis change son rôle
+            </p>
+            <div className="flex gap-3">
+              <Input
+                placeholder="Email ou username..."
+                value={searchEmail}
+                onChange={(e) => setSearchEmail(e.target.value)}
+                className="flex-1"
+              />
+              <Select value={selectedUserRole} onValueChange={(value) => setSelectedUserRole(value as AppRole)}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="assistant">Assistant</SelectItem>
+                  <SelectItem value="responsable">Responsable</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={searchAndUpdateUserRole} 
+                disabled={searchLoading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {searchLoading ? "Chargement..." : "Mettre à jour"}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -383,37 +446,6 @@ export default function Admin() {
       </Card>
 
       <Card className="border-border/50 bg-card/80 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Donner des permissions par email
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-3">
-            <Input
-              placeholder="Email de l'utilisateur"
-              value={searchEmail}
-              onChange={(e) => setSearchEmail(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && assignPermissionByEmail()}
-              className="flex-1"
-            />
-            <Select value={searchRole} onValueChange={(value) => setSearchRole(value as AppRole)}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="assistant">Assistant</SelectItem>
-                <SelectItem value="responsable">Responsable</SelectItem>
-                <SelectItem value="admin">Référents</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button onClick={assignPermissionByEmail}>Attribuer</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-blue-500/30 bg-blue-500/5 backdrop-blur">
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
             <Shield className="h-4 w-4" />
