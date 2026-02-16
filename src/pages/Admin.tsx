@@ -59,6 +59,14 @@ export default function Admin() {
         console.error("Error loading users:", e);
       }
     }
+
+    // Listen for users updates from other tabs/windows
+    const handleUsersUpdated = (event: any) => {
+      setUsers(event.detail);
+    };
+
+    window.addEventListener("usersUpdated", handleUsersUpdated);
+    return () => window.removeEventListener("usersUpdated", handleUsersUpdated);
   }, []);
 
   // Save to localStorage whenever people changes
@@ -116,6 +124,7 @@ export default function Admin() {
     const updated = users.map(u => u.id === userId ? { ...u, role: newRole } : u);
     setUsers(updated);
     localStorage.setItem("underworld_users", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updated }));
     toast.success("Rôle mis à jour");
   };
 

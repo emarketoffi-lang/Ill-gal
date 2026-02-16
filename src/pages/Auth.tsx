@@ -86,6 +86,7 @@ export default function Auth() {
       }
       
       localStorage.setItem("underworld_current_user", JSON.stringify(currentUser));
+      window.dispatchEvent(new CustomEvent("usersUpdated", { detail: users }));
       toast.success("Connexion réussie");
       reset();
       navigate("/");
@@ -134,6 +135,7 @@ export default function Auth() {
 
       users.push(newUser);
       localStorage.setItem("underworld_users", JSON.stringify(users));
+      window.dispatchEvent(new CustomEvent("usersUpdated", { detail: users }));
 
       // Log in the new user
       const currentUser = { ...newUser };
