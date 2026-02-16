@@ -54,13 +54,29 @@ export default function Admin() {
 
     // Load users
     const savedUsers = localStorage.getItem("underworld_users");
+    let loadedUsers: User[] = [];
     if (savedUsers) {
       try {
-        setUsers(JSON.parse(savedUsers));
+        loadedUsers = JSON.parse(savedUsers);
       } catch (e) {
         console.error("Error loading users:", e);
       }
     }
+
+    // Also check if there's a current user that's not in the list
+    const currentUserStr = localStorage.getItem("underworld_current_user");
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr) as User;
+        if (!loadedUsers.find(u => u.id === currentUser.id)) {
+          loadedUsers = [currentUser, ...loadedUsers];
+        }
+      } catch (e) {
+        console.error("Error loading current user:", e);
+      }
+    }
+
+    setUsers(loadedUsers);
 
     // Listen for users updates from other tabs/windows
     const handleUsersUpdated = (event: any) => {
@@ -126,6 +142,21 @@ export default function Admin() {
     const updated = users.map(u => u.id === userId ? { ...u, role: newRole } : u);
     setUsers(updated);
     localStorage.setItem("underworld_users", JSON.stringify(updated));
+    
+    // Also update current user if it's the same user
+    const currentUserStr = localStorage.getItem("underworld_current_user");
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr) as User;
+        if (currentUser.id === userId) {
+          const updatedCurrentUser = { ...currentUser, role: newRole };
+          localStorage.setItem("underworld_current_user", JSON.stringify(updatedCurrentUser));
+        }
+      } catch (e) {
+        console.error("Error updating current user:", e);
+      }
+    }
+    
     window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updated }));
     toast.success("Rôle mis à jour");
   };
@@ -136,15 +167,46 @@ export default function Admin() {
       return;
     }
 
-    const user = users.find(u => u.email.toLowerCase() === searchEmail.toLowerCase());
+    let user = users.find(u => u.email.toLowerCase() === searchEmail.toLowerCase());
+    
+    // Si pas trouvé dans la liste, chercher dans underworld_current_user
+    if (!user) {
+      const currentUserStr = localStorage.getItem("underworld_current_user");
+      if (currentUserStr) {
+        try {
+          const currentUser = JSON.parse(currentUserStr) as User;
+          if (currentUser.email.toLowerCase() === searchEmail.toLowerCase()) {
+            user = currentUser;
+          }
+        } catch (e) {
+          console.error("Error loading current user:", e);
+        }
+      }
+    }
+
     if (!user) {
       toast.error("Utilisateur non trouvé avec cet email");
       return;
     }
 
-    const updated = users.map(u => u.id === user.id ? { ...u, role: searchRole } : u);
+    const updated = users.map(u => u.id === user!.id ? { ...u, role: searchRole } : u);
     setUsers(updated);
     localStorage.setItem("underworld_users", JSON.stringify(updated));
+    
+    // Also update current user if it's the same user
+    const currentUserStr = localStorage.getItem("underworld_current_user");
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr) as User;
+        if (currentUser.id === user!.id) {
+          const updatedCurrentUser = { ...currentUser, role: searchRole };
+          localStorage.setItem("underworld_current_user", JSON.stringify(updatedCurrentUser));
+        }
+      } catch (e) {
+        console.error("Error updating current user:", e);
+      }
+    }
+    
     window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updated }));
     
     toast.success(`Permissions données à ${user.username}`);

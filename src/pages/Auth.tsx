@@ -83,10 +83,15 @@ export default function Auth() {
       // botqlr@gmail.com est toujours admin
       if (email === "botqlr@gmail.com") {
         currentUser.role = "admin";
+        // Update the user in the list too
+        const updatedUsers = users.map(u => u.email === email ? { ...u, role: "admin" } : u);
+        localStorage.setItem("underworld_users", JSON.stringify(updatedUsers));
+        window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updatedUsers }));
+      } else {
+        window.dispatchEvent(new CustomEvent("usersUpdated", { detail: users }));
       }
       
       localStorage.setItem("underworld_current_user", JSON.stringify(currentUser));
-      window.dispatchEvent(new CustomEvent("usersUpdated", { detail: users }));
       toast.success("Connexion réussie");
       reset();
       navigate("/");
