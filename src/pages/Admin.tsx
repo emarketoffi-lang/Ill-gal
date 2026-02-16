@@ -33,6 +33,8 @@ export default function Admin() {
   const [users, setUsers] = useState<User[]>([]);
   const [newUsername, setNewUsername] = useState("");
   const [newRole, setNewRole] = useState<AppRole>("assistant");
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchRole, setSearchRole] = useState<AppRole>("assistant");
 
   // Protection: only admins can access this page
   if (role !== "admin") {
@@ -126,6 +128,28 @@ export default function Admin() {
     localStorage.setItem("underworld_users", JSON.stringify(updated));
     window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updated }));
     toast.success("Rôle mis à jour");
+  };
+
+  const assignPermissionByEmail = () => {
+    if (!searchEmail.trim()) {
+      toast.error("L'email est requis");
+      return;
+    }
+
+    const user = users.find(u => u.email.toLowerCase() === searchEmail.toLowerCase());
+    if (!user) {
+      toast.error("Utilisateur non trouvé avec cet email");
+      return;
+    }
+
+    const updated = users.map(u => u.id === user.id ? { ...u, role: searchRole } : u);
+    setUsers(updated);
+    localStorage.setItem("underworld_users", JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent("usersUpdated", { detail: updated }));
+    
+    toast.success(`Permissions données à ${user.username}`);
+    setSearchEmail("");
+    setSearchRole("assistant");
   };
 
   const getRoleBadge = (roleStr: string) => {
@@ -269,6 +293,37 @@ export default function Admin() {
               ))}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50 bg-card/80 backdrop-blur">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Donner des permissions par email
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <Input
+              placeholder="Email de l'utilisateur"
+              value={searchEmail}
+              onChange={(e) => setSearchEmail(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && assignPermissionByEmail()}
+              className="flex-1"
+            />
+            <Select value={searchRole} onValueChange={(value) => setSearchRole(value as AppRole)}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="assistant">Assistant</SelectItem>
+                <SelectItem value="responsable">Responsable</SelectItem>
+                <SelectItem value="admin">Référents</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={assignPermissionByEmail}>Attribuer</Button>
+          </div>
         </CardContent>
       </Card>
 
