@@ -125,15 +125,16 @@ export default function Auth() {
           return;
         }
 
-        // Créer le profil
-        const { error: profileError } = await supabase.from("profiles").insert({
+        // Créer/mettre à jour le profil (le trigger le crée, on ajoute juste les détails)
+        const { error: profileError } = await supabase.from("profiles").upsert({
           user_id: signUpData.user.id,
           username: username.trim(),
           avatar_url: avatarUrl.trim() || avatar || undefined,
           discord_id: discordId.trim(),
-        });
+        }, { onConflict: 'user_id' });
 
         if (profileError) {
+          console.error("Profile error:", profileError);
           toast.error("Erreur lors de la création du profil");
           setLoading(false);
           return;
