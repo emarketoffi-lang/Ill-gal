@@ -7,7 +7,6 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import Operations from "./pages/Operations";
 import Reunions from "./pages/Reunions";
 import Rapports from "./pages/Rapports";
@@ -15,8 +14,7 @@ import Entretiens from "./pages/Entretiens";
 import Echanges from "./pages/Echanges";
 import Discussion from "./pages/Discussion";
 import Dissolutions from "./pages/Dissolutions";
-import Corbeille from "./pages/Corbeille";
-import Admin from "./pages/Admin";
+import Administration from "./pages/Administration";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,13 +38,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/profile" element={<Profile />} />
               <Route path="/operations" element={<Operations />} />
               <Route path="/reunions" element={<Reunions />} />
               <Route path="/rapports" element={<Rapports />} />
@@ -54,8 +51,7 @@ const App = () => (
               <Route path="/echanges" element={<Echanges />} />
               <Route path="/discussion" element={<Discussion />} />
               <Route path="/dissolutions" element={<Dissolutions />} />
-              <Route path="/corbeille" element={<Corbeille />} />
-              <Route path="/admin" element={<Admin />} />
+              <Route path="/administration" element={<Administration />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,91 +1,80 @@
 import { useState, useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Send, Trash2, MessageCircle } from "lucide-react";
-import { syncToSupabase } from "@/lib/supabaseSync";
 
-interface Message {
+interface MessageWithProfile {
   id: string;
   content: string;
   created_at: string;
-  username: string;
   user_id: string;
+  profiles: { username: string } | null;
 }
 
 export default function Discussion() {
   const { user, role } = useAuth();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MessageWithProfile[]>([]);
   const [content, setContent] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Load messages from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("underworld_messages");
-    if (saved) {
-      try {
-        setMessages(JSON.parse(saved));
-      } catch (e) {
-        console.error("Error loading messages:", e);
-      }
+  const fetchMessages = async () => {
+    const { data } = await supabase
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (data) {
+      // Fetch profiles for all unique user_ids
+      const userIds = [...new Set(data.map(m => m.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("user_id, username").in("user_id", userIds);
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.username]) ?? []);
+      const withProfiles = data.map(m => ({ ...m, profiles: { username: profileMap.get(m.user_id) ?? "Inconnu" } }));
+      setMessages(withProfiles as MessageWithProfile[]);
+      return;
     }
+    if (data) setMessages(data as unknown as MessageWithProfile[]);
+  };
 
-    // Listen for messages from other tabs/windows
-    const handleMessagesUpdated = (event: any) => {
-      setMessages(event.detail);
-    };
+  useEffect(() => {
+    fetchMessages();
 
-    window.addEventListener("messagesUpdated", handleMessagesUpdated);
-    return () => window.removeEventListener("messagesUpdated", handleMessagesUpdated);
+    const channel = supabase
+      .channel("messages-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        fetchMessages();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
-  // Auto-scroll to bottom
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = () => {
-    if (!content.trim() || !user) return;
-
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      content: content.trim(),
-      created_at: new Date().toISOString(),
-      username: user.username,
-      user_id: user.id,
-    };
-
-    const updated = [...messages, newMessage];
-    setMessages(updated);
-    localStorage.setItem("underworld_messages", JSON.stringify(updated));
-    syncToSupabase("messages", newMessage);
-    window.dispatchEvent(new CustomEvent("messagesUpdated", { detail: updated }));
-
+  const handleSend = async () => {
+    if (!content.trim()) return;
+    const { error } = await supabase.from("messages").insert({ content: content.trim(), user_id: user!.id });
+    if (error) toast.error(error.message);
     setContent("");
-    toast.success("Message envoyé");
   };
 
-  const handleDelete = (id: string) => {
-    const updated = messages.filter(m => m.id !== id);
-    setMessages(updated);
-    localStorage.setItem("underworld_messages", JSON.stringify(updated));
-    syncToSupabase("messages", { id, deleted: true });
-    window.dispatchEvent(new CustomEvent("messagesUpdated", { detail: updated }));
-    toast.success("Message supprimé");
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("messages").delete().eq("id", id);
+    if (error) toast.error(error.message);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="mb-4">
-        <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><MessageCircle className="h-7 w-7 text-cyan-400" />Discussion interne</h1>
+        <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><MessageCircle className="h-7 w-7 text-cyan-400" />COM DE 3RBI</h1>
         <p className="text-muted-foreground">Chat en temps réel entre membres</p>
       </div>
 
@@ -97,15 +86,13 @@ export default function Discussion() {
               <div className={`max-w-[70%] rounded-lg px-4 py-2 ${isOwn ? "bg-primary/20 border border-primary/30" : "bg-muted/50 border border-border/50"}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`text-xs font-semibold ${isOwn ? "text-primary" : "text-foreground"}`}>
-                    {m.username}
+                    {m.profiles?.username ?? "Inconnu"}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
                     {new Date(m.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                   </span>
                   {role === "admin" && !isOwn && (
-                    <button onClick={() => handleDelete(m.id)} className="text-destructive/50 hover:text-destructive">
-                      <Trash2 className="h-3 w-3" />
-                    </button>
+                    <button onClick={() => handleDelete(m.id)} className="text-destructive/50 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
                   )}
                 </div>
                 <p className="text-sm">{m.content}</p>
