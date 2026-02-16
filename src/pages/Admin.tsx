@@ -52,7 +52,7 @@ export default function Admin() {
       }
     }
 
-    // Load users
+    // Load users - fraîchement du localStorage
     const savedUsers = localStorage.getItem("underworld_users");
     let loadedUsers: User[] = [];
     if (savedUsers) {
@@ -70,6 +70,9 @@ export default function Admin() {
         const currentUser = JSON.parse(currentUserStr) as User;
         if (!loadedUsers.find(u => u.id === currentUser.id)) {
           loadedUsers = [currentUser, ...loadedUsers];
+        } else {
+          // Update la version existante au cas où le rôle a changé
+          loadedUsers = loadedUsers.map(u => u.id === currentUser.id ? currentUser : u);
         }
       } catch (e) {
         console.error("Error loading current user:", e);
@@ -167,15 +170,18 @@ export default function Admin() {
       return;
     }
 
-    let user = users.find(u => u.email.toLowerCase() === searchEmail.toLowerCase());
+    const normalizedSearchEmail = searchEmail.trim().toLowerCase();
     
-    // Si pas trouvé dans la liste, chercher dans underworld_current_user
+    // Chercher dans la liste actuelle d'abord
+    let user = users.find(u => u.email.toLowerCase().trim() === normalizedSearchEmail);
+    
+    // Si pas trouvé, chercher dans underworld_current_user
     if (!user) {
       const currentUserStr = localStorage.getItem("underworld_current_user");
       if (currentUserStr) {
         try {
           const currentUser = JSON.parse(currentUserStr) as User;
-          if (currentUser.email.toLowerCase() === searchEmail.toLowerCase()) {
+          if (currentUser.email.toLowerCase().trim() === normalizedSearchEmail) {
             user = currentUser;
           }
         } catch (e) {
@@ -184,9 +190,27 @@ export default function Admin() {
       }
     }
 
+    // Dernier recours: chercher directement dans underworld_users
+    if (!user) {
+      const allUsersStr = localStorage.getItem("underworld_users");
+      if (allUsersStr) {
+        try {
+          const allUsers = JSON.parse(allUsersStr) as User[];
+          user = allUsers.find(u => u.email.toLowerCase().trim() === normalizedSearchEmail);
+        } catch (e) {
+          console.error("Error searching users:", e);
+        }
+      }
+    }
+
     if (!user) {
       toast.error("Utilisateur non trouvé avec cet email");
       return;
+    }
+
+    // Ajouter à la liste locale s'il n'y est pas
+    if (!users.find(u => u.id === user!.id)) {
+      setUsers([...users, user]);
     }
 
     const updated = users.map(u => u.id === user!.id ? { ...u, role: searchRole } : u);
