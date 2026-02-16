@@ -82,7 +82,9 @@ export default function Entretiens() {
 
     const updated = [...items, newEntretien];
     setItems(updated);
-    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));    syncToSupabase(\"entretiens\", newEntretien);    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
+    localStorage.setItem("underworld_entretiens", JSON.stringify(updated));
+    syncToSupabase("entretiens", newEntretien);
+    window.dispatchEvent(new CustomEvent("entretienUpdated", { detail: updated }));
 
     toast.success("Entretien publié");
     setOpen(false);
