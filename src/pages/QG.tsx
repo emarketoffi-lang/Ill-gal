@@ -130,6 +130,10 @@ export default function QG() {
       setPendingPos(null);
       setDialogOpen(false);
       setNewQG({ name: "", type: "Gang", responsible_name: "" });
+      if (pendingMarkerRef.current) {
+        pendingMarkerRef.current.remove();
+        pendingMarkerRef.current = null;
+      }
     },
   });
 
@@ -161,8 +165,40 @@ export default function QG() {
 
   const handleMapClick = useCallback((lat: number, lng: number) => {
     if (!addModeRef.current) return;
-    setPendingPos({ lat, lng });
-    setDialogOpen(true);
+    // Place pending marker with confirm/cancel popup
+    if (pendingMarkerRef.current) {
+      pendingMarkerRef.current.remove();
+      pendingMarkerRef.current = null;
+    }
+    const marker = L.marker([lat, lng], { icon: pendingIcon });
+    if (mapRef.current) {
+      marker.addTo(mapRef.current);
+      const popupContent = document.createElement("div");
+      popupContent.innerHTML = `
+        <div style="text-align:center;font-family:'Rajdhani',sans-serif;">
+          <p style="margin:0 0 8px;font-weight:600;font-size:14px;color:#e5e5e5;">Placer un QG ici ?</p>
+          <div style="display:flex;gap:6px;">
+            <button id="qg-confirm" style="flex:1;padding:6px 12px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">Confirmer</button>
+            <button id="qg-cancel" style="flex:1;padding:6px 12px;background:#333;color:#ccc;border:1px solid #555;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px;">Annuler</button>
+          </div>
+        </div>
+      `;
+      const popup = L.popup({ closeButton: false, className: "gta-confirm-popup" })
+        .setContent(popupContent);
+      marker.bindPopup(popup).openPopup();
+
+      popupContent.querySelector("#qg-confirm")?.addEventListener("click", () => {
+        setPendingPos({ lat, lng });
+        setDialogOpen(true);
+        marker.closePopup();
+      });
+      popupContent.querySelector("#qg-cancel")?.addEventListener("click", () => {
+        marker.remove();
+        pendingMarkerRef.current = null;
+      });
+
+      pendingMarkerRef.current = marker;
+    }
   }, []);
 
   // Keep addModeRef in sync
@@ -233,17 +269,6 @@ export default function QG() {
         .addTo(markersRef.current!);
     });
   }, [filtered]);
-
-  // Pending marker
-  useEffect(() => {
-    if (pendingMarkerRef.current) {
-      pendingMarkerRef.current.remove();
-      pendingMarkerRef.current = null;
-    }
-    if (pendingPos && mapRef.current) {
-      pendingMarkerRef.current = L.marker([pendingPos.lat, pendingPos.lng], { icon: pendingIcon }).addTo(mapRef.current);
-    }
-  }, [pendingPos]);
 
   const handleSubmit = () => {
     if (!pendingPos || !newQG.name || !newQG.responsible_name) return;
