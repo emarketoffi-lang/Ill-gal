@@ -6,12 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
 
+const SIGNUP_COOLDOWN_MS = 60_000;
+
+const getAuthErrorMessage = (message: string) => {
+  const normalized = message.toLowerCase();
+
+  if (normalized.includes("email rate limit exceeded")) {
+    return "Trop de tentatives d'inscription. Attendez 1 minute puis réessayez.";
+  }
+
+  if (normalized.includes("user already registered")) {
+    return "Ce compte existe déjà. Essayez de vous connecter.";
+  }
+
+  return message;
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupBlockedUntil, setSignupBlockedUntil] = useState<number>(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +44,16 @@ export default function Auth() {
         setLoading(false);
         return;
       }
-      const { error } = await supabase.auth.signUp({
+
+      const now = Date.now();
+      if (now < signupBlockedUntil) {
+        const secondsLeft = Math.ceil((signupBlockedUntil - now) / 1000);
+        toast.error(`Patientez ${secondsLeft}s avant une nouvelle inscription.`);
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -35,8 +61,22 @@ export default function Auth() {
           data: { username: username.trim() },
         },
       });
-      if (error) toast.error(error.message);
-      else toast.success("Vérifiez votre email pour confirmer votre inscription");
+
+      if (error) {
+        const friendly = getAuthErrorMessage(error.message);
+        toast.error(friendly);
+
+        if (error.message.toLowerCase().includes("email rate limit exceeded")) {
+          setSignupBlockedUntil(Date.now() + SIGNUP_COOLDOWN_MS);
+        }
+      } else {
+        if (data.session) {
+          toast.success("Compte créé et connecté");
+        } else {
+          toast.success("Vérifiez votre email pour confirmer votre inscription");
+          setSignupBlockedUntil(Date.now() + SIGNUP_COOLDOWN_MS);
+        }
+      }
     }
     setLoading(false);
   };
