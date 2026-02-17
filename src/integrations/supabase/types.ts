@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      banned_users: {
+        Row: {
+          banned_at: string
+          banned_by: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          banned_by?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          banned_by?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       dissolutions: {
         Row: {
           created_at: string
@@ -106,6 +127,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      entretien_avis: {
+        Row: {
+          content: string
+          created_at: string
+          entretien_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entretien_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entretien_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entretien_avis_entretien_id_fkey"
+            columns: ["entretien_id"]
+            isOneToOne: false
+            referencedRelation: "entretiens"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {

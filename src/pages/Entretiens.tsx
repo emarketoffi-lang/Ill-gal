@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Plus, Vote, ThumbsUp, ThumbsDown, Trash2, RotateCcw, X } from "lucide-react";
+import { Plus, Vote, ThumbsUp, ThumbsDown, Trash2, RotateCcw, X, MessageSquare } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 type EntretienWithVotes = Tables<"entretiens"> & { votes: Tables<"votes">[] };
+type EntretienAvis = Tables<"entretien_avis"> & { username: string };
 
 export default function Entretiens() {
   const { user, role } = useAuth();
@@ -22,6 +23,11 @@ export default function Entretiens() {
   const [candidateName, setCandidateName] = useState("");
   const [groupName, setGroupName] = useState("");
   const [summary, setSummary] = useState("");
+  const [avisOpen, setAvisOpen] = useState(false);
+  const [selectedEntretien, setSelectedEntretien] = useState<EntretienWithVotes | null>(null);
+  const [avisItems, setAvisItems] = useState<EntretienAvis[]>([]);
+  const [avisText, setAvisText] = useState("");
+  const [avisLoading, setAvisLoading] = useState(false);
 
   const isAdmin = role === "admin";
   const canCreate = isAdmin || role === "responsable";
@@ -61,6 +67,78 @@ export default function Entretiens() {
 
   const activeItems = items.filter((e) => !e.deleted_at);
   const trashedItems = items.filter((e) => !!e.deleted_at);
+
+  const isMissingAvisTable = (message?: string) =>
+    typeof message === "string" &&
+    (message.includes("public.entretien_avis") || message.includes("relation \"entretien_avis\" does not exist"));
+
+  const fetchAvis = async (entretienId: string) => {
+    setAvisLoading(true);
+
+    const { data, error } = await supabase
+      .from("entretien_avis")
+      .select("*")
+      .eq("entretien_id", entretienId)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      if (isMissingAvisTable(error.message)) {
+        setAvisItems([]);
+        toast.error("Le module Avis n'est pas encore migré en base");
+      } else {
+        toast.error(error.message);
+      }
+      setAvisLoading(false);
+      return;
+    }
+
+    const userIds = [...new Set((data ?? []).map((a) => a.user_id))];
+    const { data: profiles } = userIds.length
+      ? await supabase.from("profiles").select("user_id,username").in("user_id", userIds)
+      : { data: [] as { user_id: string; username: string }[] };
+
+    const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, p.username]));
+    const withUsernames = (data ?? []).map((a) => ({
+      ...a,
+      username: a.user_id === user?.id ? "Vous" : profileMap.get(a.user_id) ?? "Inconnu",
+    }));
+
+    setAvisItems(withUsernames);
+    setAvisLoading(false);
+  };
+
+  const openAvis = (entretien: EntretienWithVotes) => {
+    setSelectedEntretien(entretien);
+    setAvisText("");
+    setAvisOpen(true);
+    void fetchAvis(entretien.id);
+  };
+
+  const handleSendAvis = async () => {
+    if (!selectedEntretien || !user?.id) return;
+    if (!avisText.trim()) {
+      toast.error("Votre avis est vide");
+      return;
+    }
+
+    const { error } = await supabase.from("entretien_avis").insert({
+      entretien_id: selectedEntretien.id,
+      user_id: user.id,
+      content: avisText.trim(),
+    });
+
+    if (error) {
+      if (isMissingAvisTable(error.message)) {
+        toast.error("Le module Avis n'est pas encore migré en base");
+        return;
+      }
+      toast.error(error.message);
+      return;
+    }
+
+    setAvisText("");
+    void fetchAvis(selectedEntretien.id);
+  };
 
   const handleSubmit = async () => {
     if (!candidateName.trim() || !summary.trim()) { toast.error("Champs requis"); return; }
@@ -140,6 +218,9 @@ export default function Entretiens() {
                 <Button size="sm" variant={myVote?.vote === false ? "destructive" : "outline"} onClick={() => canVote && handleVote(e.id, false)} disabled={!canVote} className="gap-1">
                   <ThumbsDown className="h-3 w-3" /> {noCount}
                 </Button>
+                <Button size="sm" variant="outline" onClick={() => openAvis(e)} className="gap-1">
+                  <MessageSquare className="h-3 w-3" /> Avis
+                </Button>
               </div>
               {!canVote && <span className="text-xs text-muted-foreground">Seuls les responsables peuvent voter</span>}
             </div>
@@ -193,6 +274,41 @@ export default function Entretiens() {
           {activeItems.length === 0 && <p className="text-muted-foreground text-center py-12">Aucun entretien</p>}
         </div>
       )}
+
+      <Dialog open={avisOpen} onOpenChange={setAvisOpen}>
+        <DialogContent className="bg-card border-border max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-['Rajdhani'] text-xl">Avis – {selectedEntretien?.candidate_name ?? "Entretien"}</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className="max-h-72 overflow-y-auto space-y-2 rounded-md border border-border/50 p-3 bg-muted/20">
+              {avisLoading ? (
+                <p className="text-sm text-muted-foreground">Chargement…</p>
+              ) : avisItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Aucun avis pour le moment.</p>
+              ) : (
+                avisItems.map((avis) => (
+                  <div key={avis.id} className="rounded-md border border-border/50 p-2 bg-background/70">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">{avis.username}</span> · {new Date(avis.created_at).toLocaleString("fr-FR")}
+                    </p>
+                    <p className="text-sm mt-1 whitespace-pre-wrap">{avis.content}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <Textarea
+              placeholder="Donnez votre avis sur cet entretien..."
+              value={avisText}
+              onChange={(e) => setAvisText(e.target.value)}
+              className="bg-muted/50 min-h-[100px]"
+            />
+            <Button onClick={handleSendAvis} className="w-full">Envoyer l'avis</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
