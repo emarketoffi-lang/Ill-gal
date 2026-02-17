@@ -10,11 +10,11 @@ import type { Database } from "@/integrations/supabase/types";
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 const cards = [
-  { title: "Opérations", desc: "Gérer vos opérations RP", icon: Target, url: "/operations", color: "text-primary" },
+  { title: "Opérations", desc: "Gérer vos Mission", icon: Target, url: "/operations", color: "text-primary" },
   { title: "Réunions", desc: "Dernières réunions du groupe", icon: Users, url: "/reunions", color: "text-blue-400" },
   { title: "Rapports", desc: "Rapports de session", icon: FileText, url: "/rapports", color: "text-green-400" },
   { title: "Entretiens", desc: "Candidatures & validation", icon: Vote, url: "/entretiens", color: "text-yellow-400" },
-  { title: "Échanges", desc: "Registre des échanges", icon: ArrowLeftRight, url: "/echanges", color: "text-purple-400" },
+  { title: "Give", desc: "Registre des échanges", icon: ArrowLeftRight, url: "/echanges", color: "text-purple-400" },
   { title: "Discussion", desc: "Chat interne", icon: MessageCircle, url: "/discussion", color: "text-cyan-400" },
   { title: "Dissolutions", desc: "Historique des dissolutions", icon: Trash2, url: "/dissolutions", color: "text-orange-400" },
 ];

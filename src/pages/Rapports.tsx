@@ -13,6 +13,7 @@ import type { Tables } from "@/integrations/supabase/types";
 export default function Rapports() {
   const { user, role } = useAuth();
   const [items, setItems] = useState<Tables<"rapports">[]>([]);
+  const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Tables<"rapports"> | null>(null);
   const [authorName, setAuthorName] = useState("");
@@ -20,9 +21,34 @@ export default function Rapports() {
 
   const fetch_ = async () => {
     const { data } = await supabase.from("rapports").select("*").order("created_at", { ascending: false });
-    if (data) setItems(data);
+    if (!data) return;
+
+    setItems(data);
+
+    const userIds = [...new Set(data.map((item) => item.user_id))];
+    if (userIds.length === 0) {
+      setCreatorNames({});
+      return;
+    }
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id,username")
+      .in("user_id", userIds);
+
+    const names = (profiles ?? []).reduce<Record<string, string>>((acc, profile) => {
+      acc[profile.user_id] = profile.username;
+      return acc;
+    }, {});
+
+    setCreatorNames(names);
   };
   useEffect(() => { fetch_(); }, []);
+
+  const getCreatorLabel = (creatorId: string) => {
+    if (creatorId === user?.id) return "Vous";
+    return creatorNames[creatorId] ?? `${creatorId.slice(0, 8)}...`;
+  };
 
   const handleSubmit = async () => {
     if (!authorName.trim() || !summary.trim()) { toast.error("Tous les champs sont requis"); return; }
@@ -47,8 +73,8 @@ export default function Rapports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><FileText className="h-7 w-7 text-green-400" />Rapports de session</h1>
-          <p className="text-muted-foreground">Historique des rapports</p>
+          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><FileText className="h-7 w-7 text-green-400" />Récapitulatif</h1>
+          <p className="text-muted-foreground">Historique des Récapitulatif</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Ajouter</Button></DialogTrigger>
@@ -70,6 +96,7 @@ export default function Rapports() {
               <div>
                 <CardTitle className="font-['Rajdhani'] text-lg">{r.author_name}</CardTitle>
                 <p className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Créé par: {getCreatorLabel(r.user_id)}</p>
               </div>
               {(r.user_id === user?.id || role === "admin") && (
                 <div className="flex gap-1">

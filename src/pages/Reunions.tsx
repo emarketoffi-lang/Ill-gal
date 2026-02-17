@@ -13,6 +13,7 @@ import type { Tables } from "@/integrations/supabase/types";
 export default function Reunions() {
   const { user, role } = useAuth();
   const [items, setItems] = useState<Tables<"reunions">[]>([]);
+  const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -24,9 +25,34 @@ export default function Reunions() {
 
   const fetch_ = async () => {
     const { data } = await supabase.from("reunions").select("*").order("reunion_date", { ascending: false });
-    if (data) setItems(data);
+    if (!data) return;
+
+    setItems(data);
+
+    const userIds = [...new Set(data.map((item) => item.user_id))];
+    if (userIds.length === 0) {
+      setCreatorNames({});
+      return;
+    }
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id,username")
+      .in("user_id", userIds);
+
+    const names = (profiles ?? []).reduce<Record<string, string>>((acc, profile) => {
+      acc[profile.user_id] = profile.username;
+      return acc;
+    }, {});
+
+    setCreatorNames(names);
   };
   useEffect(() => { fetch_(); }, []);
+
+  const getCreatorLabel = (creatorId: string) => {
+    if (creatorId === user?.id) return "Vous";
+    return creatorNames[creatorId] ?? `${creatorId.slice(0, 8)}...`;
+  };
 
   const handleSubmit = async () => {
     if (!title.trim() || !date) { toast.error("Titre et date requis"); return; }
@@ -71,6 +97,7 @@ export default function Reunions() {
               <div>
                 <CardTitle className="font-['Rajdhani'] text-lg">{r.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">📅 {new Date(r.reunion_date).toLocaleString("fr-FR")}</p>
+                <p className="text-xs text-muted-foreground">Créée par: {getCreatorLabel(r.user_id)}</p>
               </div>
               {(r.user_id === user?.id || role === "admin") && (
                 <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(r.id)}><Trash2 className="h-3 w-3" /></Button>

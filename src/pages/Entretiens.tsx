@@ -17,6 +17,7 @@ type EntretienWithVotes = Tables<"entretiens"> & { votes: Tables<"votes">[] };
 export default function Entretiens() {
   const { user, role } = useAuth();
   const [items, setItems] = useState<EntretienWithVotes[]>([]);
+  const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
   const [candidateName, setCandidateName] = useState("");
   const [groupName, setGroupName] = useState("");
@@ -28,9 +29,35 @@ export default function Entretiens() {
 
   const fetch_ = async () => {
     const { data } = await supabase.from("entretiens").select("*, votes(*)").order("created_at", { ascending: false });
-    if (data) setItems(data as EntretienWithVotes[]);
+    if (!data) return;
+
+    const entretiens = data as EntretienWithVotes[];
+    setItems(entretiens);
+
+    const userIds = [...new Set(entretiens.map((entretien) => entretien.user_id))];
+    if (userIds.length === 0) {
+      setCreatorNames({});
+      return;
+    }
+
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id,username")
+      .in("user_id", userIds);
+
+    const names = (profiles ?? []).reduce<Record<string, string>>((acc, profile) => {
+      acc[profile.user_id] = profile.username;
+      return acc;
+    }, {});
+
+    setCreatorNames(names);
   };
   useEffect(() => { fetch_(); }, []);
+
+  const getCreatorLabel = (creatorId: string) => {
+    if (creatorId === user?.id) return "Vous";
+    return creatorNames[creatorId] ?? `${creatorId.slice(0, 8)}...`;
+  };
 
   const activeItems = items.filter((e) => !e.deleted_at);
   const trashedItems = items.filter((e) => !!e.deleted_at);
@@ -81,6 +108,7 @@ export default function Entretiens() {
             <CardTitle className="font-['Rajdhani'] text-lg">{e.candidate_name}</CardTitle>
             {e.group_name && <p className="text-xs text-muted-foreground">Groupe: {e.group_name}</p>}
             <p className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("fr-FR")}</p>
+            <p className="text-xs text-muted-foreground">Créé par: {getCreatorLabel(e.user_id)}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge className={statusClass}>{statusLabel}</Badge>

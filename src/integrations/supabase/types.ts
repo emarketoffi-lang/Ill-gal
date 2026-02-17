@@ -161,6 +161,7 @@ export type Database = {
           description: string | null
           id: string
           operation_date: string | null
+          participant_group: string | null
           status: string
           title: string
           updated_at: string
@@ -171,6 +172,7 @@ export type Database = {
           description?: string | null
           id?: string
           operation_date?: string | null
+          participant_group?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -181,6 +183,7 @@ export type Database = {
           description?: string | null
           id?: string
           operation_date?: string | null
+          participant_group?: string | null
           status?: string
           title?: string
           updated_at?: string

@@ -74,8 +74,8 @@ export default function Discussion() {
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       <div className="mb-4">
-        <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><MessageCircle className="h-7 w-7 text-cyan-400" />Discussion interne</h1>
-        <p className="text-muted-foreground">Chat en temps réel entre membres</p>
+        <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><MessageCircle className="h-7 w-7 text-cyan-400" />COM DE 3RBI</h1>
+        <p className="text-muted-foreground">CHAT DE 3RBI</p>
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-2 pr-2">
