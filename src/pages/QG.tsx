@@ -113,6 +113,15 @@ const SUPABASE_PROJECT_REF = (() => {
   }
 })();
 
+const getErrorMessage = (error: unknown) => {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "object" && error !== null) {
+    const maybeMessage = (error as { message?: unknown }).message;
+    if (typeof maybeMessage === "string" && maybeMessage.length > 0) return maybeMessage;
+  }
+  return "Erreur inconnue";
+};
+
 /* ─────────────────────────────────────────────
    Component
    ───────────────────────────────────────────── */
@@ -158,7 +167,8 @@ export default function QG() {
 
   useEffect(() => {
     if (!qgError) return;
-    const message = qgError instanceof Error ? qgError.message : "Erreur inconnue";
+    const message = getErrorMessage(qgError);
+    console.error("[QG] query error", qgError);
     toast({
       title: "Erreur QG",
       description: `${message} (projet: ${SUPABASE_PROJECT_REF})`,
@@ -176,11 +186,14 @@ export default function QG() {
       toast({ title: "QG ajouté avec succès" });
       resetAll();
     },
-    onError: (e) => toast({
-      title: "Erreur",
-      description: `${e.message} (projet: ${SUPABASE_PROJECT_REF})`,
-      variant: "destructive",
-    }),
+    onError: (e) => {
+      console.error("[QG] create error", e);
+      toast({
+        title: "Erreur",
+        description: `${getErrorMessage(e)} (projet: ${SUPABASE_PROJECT_REF})`,
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -189,11 +202,14 @@ export default function QG() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["qg"] }); toast({ title: "QG supprimé" }); },
-    onError: (e) => toast({
-      title: "Erreur",
-      description: `${e.message} (projet: ${SUPABASE_PROJECT_REF})`,
-      variant: "destructive",
-    }),
+    onError: (e) => {
+      console.error("[QG] delete error", e);
+      toast({
+        title: "Erreur",
+        description: `${getErrorMessage(e)} (projet: ${SUPABASE_PROJECT_REF})`,
+        variant: "destructive",
+      });
+    },
   });
 
   /* ── Derived ── */
