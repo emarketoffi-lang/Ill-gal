@@ -86,11 +86,18 @@
   box-shadow: 0 0 40px -10px hsl(0 72% 50% / 0.4);
 }
 
+/* ── Leaflet Dark Theme ── */
+.leaflet-container {
+  background: #0d1117 !important;
+}
+
 /* GTA Blip markers */
+.gta-blip,
 .gta-blip-icon {
   background: none !important;
   border: none !important;
 }
+
 .leaflet-popup-content-wrapper {
   background: rgba(15, 15, 15, 0.95) !important;
   color: #e5e5e5 !important;
@@ -101,4 +108,9 @@
 .leaflet-popup-tip {
   background: rgba(15, 15, 15, 0.95) !important;
   border: 1px solid rgba(220, 38, 38, 0.4) !important;
+}
+
+/* Hide grey default tile outlines */
+.leaflet-tile {
+  outline: none !important;
 }
