@@ -212,6 +212,42 @@ export type Database = {
         }
         Relationships: []
       }
+      qg: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          pos_x: number
+          pos_y: number
+          responsible_name: string
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          pos_x?: number
+          pos_y?: number
+          responsible_name: string
+          status?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          pos_x?: number
+          pos_y?: number
+          responsible_name?: string
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rapports: {
         Row: {
           author_name: string

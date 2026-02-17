@@ -23,17 +23,19 @@ import {
   LogOut,
   Shield,
   Bell,
+  MapPin,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Mission", url: "/operations", icon: Target },
+  { title: "QG", url: "/qg", icon: MapPin },
+  { title: "Opérations", url: "/operations", icon: Target },
   { title: "Réunions", url: "/reunions", icon: Users },
-  { title: "Récapitulatif", url: "/rapports", icon: FileText },
+  { title: "Rapports", url: "/rapports", icon: FileText },
   { title: "Entretiens", url: "/entretiens", icon: Vote },
-  { title: "Give", url: "/echanges", icon: ArrowLeftRight },
-  { title: "COM DE 3ARBI", url: "/discussion", icon: MessageCircle },
+  { title: "Échanges", url: "/echanges", icon: ArrowLeftRight },
+  { title: "Discussion", url: "/discussion", icon: MessageCircle },
   { title: "Dissolutions", url: "/dissolutions", icon: Trash2 },
   { title: "Administration", url: "/administration", icon: Shield, adminOnly: true },
 ];

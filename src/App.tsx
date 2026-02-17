@@ -15,6 +15,7 @@ import Echanges from "./pages/Echanges";
 import Discussion from "./pages/Discussion";
 import Dissolutions from "./pages/Dissolutions";
 import Administration from "./pages/Administration";
+import QGPage from "./pages/QG";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/qg" element={<QGPage />} />
               <Route path="/operations" element={<Operations />} />
               <Route path="/reunions" element={<Reunions />} />
               <Route path="/rapports" element={<Rapports />} />

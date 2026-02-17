@@ -47,8 +47,8 @@ export default function Rapports() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><FileText className="h-7 w-7 text-green-400" />Récapitulatif</h1>
-          <p className="text-muted-foreground">Historique des Récapitulatif</p>
+          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><FileText className="h-7 w-7 text-green-400" />Rapports de session</h1>
+          <p className="text-muted-foreground">Historique des rapports</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Ajouter</Button></DialogTrigger>

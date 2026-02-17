@@ -56,8 +56,8 @@ export default function Operations() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><Target className="h-7 w-7 text-primary" />Mission</h1>
-          <p className="text-muted-foreground">Gérez vos Mission</p>
+          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><Target className="h-7 w-7 text-primary" />Opérations</h1>
+          <p className="text-muted-foreground">Gérez vos opérations RP personnelles</p>
         </div>
         {canCreate && (
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
