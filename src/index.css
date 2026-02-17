@@ -114,3 +114,8 @@
 .leaflet-tile {
   outline: none !important;
 }
+
+/* Force Radix dialog above Leaflet panes (z-index up to 700+) */
+[data-radix-portal] {
+  z-index: 9999 !important;
+}
