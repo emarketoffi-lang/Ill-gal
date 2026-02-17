@@ -105,6 +105,14 @@ const createTileLayer = (style: MapStyleKey) =>
     errorTileUrl: EMPTY_TILE,
   });
 
+const SUPABASE_PROJECT_REF = (() => {
+  try {
+    return new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split(".")[0] ?? "unknown";
+  } catch {
+    return "unknown";
+  }
+})();
+
 /* ─────────────────────────────────────────────
    Component
    ───────────────────────────────────────────── */
@@ -138,14 +146,25 @@ export default function QG() {
   }, [addMode]);
 
   /* ── Data ── */
-  const { data: qgs = [] } = useQuery<Tables<"qg">[]>({
+  const { data: qgs = [], error: qgError } = useQuery<Tables<"qg">[]>({
     queryKey: ["qg"],
     queryFn: async () => {
       const { data, error } = await supabase.from("qg").select("*").order("created_at", { ascending: false });
       if (error) throw error;
       return data;
     },
+    retry: false,
   });
+
+  useEffect(() => {
+    if (!qgError) return;
+    const message = qgError instanceof Error ? qgError.message : "Erreur inconnue";
+    toast({
+      title: "Erreur QG",
+      description: `${message} (projet: ${SUPABASE_PROJECT_REF})`,
+      variant: "destructive",
+    });
+  }, [qgError, toast]);
 
   const createMutation = useMutation({
     mutationFn: async (p: { name: string; type: string; responsible_name: string; pos_x: number; pos_y: number }) => {
@@ -157,7 +176,11 @@ export default function QG() {
       toast({ title: "QG ajouté avec succès" });
       resetAll();
     },
-    onError: (e) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+    onError: (e) => toast({
+      title: "Erreur",
+      description: `${e.message} (projet: ${SUPABASE_PROJECT_REF})`,
+      variant: "destructive",
+    }),
   });
 
   const deleteMutation = useMutation({
@@ -166,7 +189,11 @@ export default function QG() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["qg"] }); toast({ title: "QG supprimé" }); },
-    onError: (e) => toast({ title: "Erreur", description: e.message, variant: "destructive" }),
+    onError: (e) => toast({
+      title: "Erreur",
+      description: `${e.message} (projet: ${SUPABASE_PROJECT_REF})`,
+      variant: "destructive",
+    }),
   });
 
   /* ── Derived ── */
