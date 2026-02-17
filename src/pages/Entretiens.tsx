@@ -210,7 +210,7 @@ export default function Entretiens() {
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground whitespace-pre-wrap">{e.summary}</p>
           {!isTrashed && (
-            <div className="flex items-center gap-4 pt-2 border-t border-border/50">
+            <div className="flex items-center justify-between gap-4 pt-2 border-t border-border/50">
               <div className="flex items-center gap-2">
                 <Button size="sm" variant={myVote?.vote === true ? "default" : "outline"} onClick={() => canVote && handleVote(e.id, true)} disabled={!canVote} className="gap-1">
                   <ThumbsUp className="h-3 w-3" /> {yesCount}
@@ -218,10 +218,10 @@ export default function Entretiens() {
                 <Button size="sm" variant={myVote?.vote === false ? "destructive" : "outline"} onClick={() => canVote && handleVote(e.id, false)} disabled={!canVote} className="gap-1">
                   <ThumbsDown className="h-3 w-3" /> {noCount}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => openAvis(e)} className="gap-1">
-                  <MessageSquare className="h-3 w-3" /> Avis
-                </Button>
               </div>
+              <Button size="sm" variant="secondary" onClick={() => openAvis(e)} className="gap-1 shrink-0">
+                <MessageSquare className="h-3 w-3" /> Avis
+              </Button>
               {!canVote && <span className="text-xs text-muted-foreground">Seuls les responsables peuvent voter</span>}
             </div>
           )}
