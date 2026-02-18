@@ -172,11 +172,18 @@ export default function Administration() {
                         <SelectValue placeholder="Sélectionner un utilisateur" />
                       </SelectTrigger>
                       <SelectContent>
-                        {users?.map((u) => (
-                          <SelectItem key={u.user_id} value={u.user_id}>
-                            {u.username}
-                          </SelectItem>
-                        ))}
+                        {users
+                          ?.filter((u) => {
+                            // Exclure les utilisateurs déjà dans un groupe
+                            return !Object.values(groupMembers).some((members) =>
+                              members.some((m) => m.id === u.user_id)
+                            );
+                          })
+                          .map((u) => (
+                            <SelectItem key={u.user_id} value={u.user_id}>
+                              {u.username}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                     <Button
