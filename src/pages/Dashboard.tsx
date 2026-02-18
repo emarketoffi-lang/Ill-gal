@@ -11,13 +11,13 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 
 const allCards = [
   { title: "QG", desc: "Quartier Général", icon: MapPin, url: "/qg", color: "text-red-400" },
-  { title: "Opérations", desc: "Gérer vos Mission", icon: Target, url: "/operations", color: "text-primary" },
+  { title: "Mission", desc: "Gérer vos Mission", icon: Target, url: "/operations", color: "text-primary" },
   { title: "Proposition Mission", desc: "Idées de missions", icon: Lightbulb, url: "/proposition-missions", color: "text-yellow-400" },
   { title: "Réunions", desc: "Dernières réunions du groupe", icon: Users, url: "/reunions", color: "text-blue-400" },
-  { title: "Rapports", desc: "Rapports de session", icon: FileText, url: "/rapports", color: "text-green-400" },
+  { title: "Récapitulatif", desc: "Historique des Récapitulatif", icon: FileText, url: "/rapports", color: "text-green-400" },
   { title: "Entretiens", desc: "Candidatures & validation", icon: Vote, url: "/entretiens", color: "text-yellow-400" },
-  { title: "Échanges", desc: "Registre des échanges", icon: ArrowLeftRight, url: "/echanges", color: "text-purple-400" },
-  { title: "Discussion", desc: "Chat interne", icon: MessageCircle, url: "/discussion", color: "text-cyan-400" },
+  { title: "Give", desc: "Historique des transferts Give", icon: ArrowLeftRight, url: "/echanges", color: "text-purple-400" },
+  { title: "Discussion", desc: "COM DE 3ARBI", icon: MessageCircle, url: "/discussion", color: "text-cyan-400" },
   { title: "Dissolutions", desc: "Historique des dissolutions", icon: Trash2, url: "/dissolutions", color: "text-orange-400" },
   { title: "Administration", desc: "Gestion du système", icon: Shield, url: "/administration", color: "text-primary", adminOnly: true },
 ];

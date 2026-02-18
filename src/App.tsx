@@ -16,6 +16,7 @@ import Echanges from "./pages/Echanges";
 import Discussion from "./pages/Discussion";
 import Dissolutions from "./pages/Dissolutions";
 import Administration from "./pages/Administration";
+import GM from "./pages/GM";
 import QGPage from "./pages/QG";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="/echanges" element={<Echanges />} />
               <Route path="/discussion" element={<Discussion />} />
               <Route path="/dissolutions" element={<Dissolutions />} />
+              <Route path="/gm" element={<GM />} />
               <Route path="/administration" element={<Administration />} />
             </Route>
             <Route path="*" element={<NotFound />} />
