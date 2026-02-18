@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Target } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
@@ -156,14 +157,14 @@ export default function Operations() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><Target className="h-7 w-7 text-primary" />Mission</h1>
+          <h1 className="text-3xl font-bold font-rajdhani tracking-wider flex items-center gap-2"><Target className="h-7 w-7 text-primary" />Mission</h1>
           <p className="text-muted-foreground">Gérez vos Mission</p>
         </div>
         {canCreate && (
           <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Nouvelle</Button></DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-['Rajdhani'] text-xl">{editing ? "Modifier" : "Nouvelle opération"}</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-rajdhani text-xl">{editing ? "Modifier" : "Nouvelle opération"}</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-muted/50" />
                 <Textarea placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} className="bg-muted/50" />
@@ -189,31 +190,69 @@ export default function Operations() {
         )}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {ops.map((op) => (
-          <Card key={op.id} className="border-border/50 bg-card/80">
-            <CardHeader className="flex flex-row items-start justify-between pb-2">
-              <div>
-                <CardTitle className="font-['Rajdhani'] text-lg">{op.title}</CardTitle>
-                <p className="text-xs text-muted-foreground">{new Date(op.created_at).toLocaleDateString("fr-FR")}</p>
-                <p className="text-xs text-muted-foreground">Créée par: {getCreatorLabel(op.user_id)}</p>
-              </div>
-              <Badge className={statusColor[op.status] ?? ""}>{op.status.replace("_", " ")}</Badge>
-            </CardHeader>
-            <CardContent>
-              {op.description && <p className="text-sm text-muted-foreground mb-3">{op.description}</p>}
-              {op.participant_group && <p className="text-xs text-muted-foreground mb-1">👥 Groupe: {op.participant_group}</p>}
-              {op.operation_date && <p className="text-xs text-muted-foreground">📅 {new Date(op.operation_date).toLocaleDateString("fr-FR")}</p>}
-              {op.user_id === user?.id && (
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(op)}><Pencil className="h-3 w-3" /></Button>
-                  <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(op.id)}><Trash2 className="h-3 w-3" /></Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-        {ops.length === 0 && <p className="text-muted-foreground col-span-2 text-center py-12">Aucune opération pour le moment</p>}
+      <div className="space-y-4">
+        {(() => {
+          // Group operations by user_id
+          const groupedByUser = ops.reduce<Record<string, typeof ops>>((acc, op) => {
+            if (!acc[op.user_id]) acc[op.user_id] = [];
+            acc[op.user_id].push(op);
+            return acc;
+          }, {});
+
+          const userGroups = Object.entries(groupedByUser).sort((a, b) => {
+            // Your own operations first
+            if (a[0] === user?.id) return -1;
+            if (b[0] === user?.id) return 1;
+            return 0;
+          });
+
+          if (userGroups.length === 0) {
+            return <p className="text-muted-foreground text-center py-12">Aucune opération pour le moment</p>;
+          }
+
+          return (
+            <Accordion type="single" collapsible className="space-y-2">
+              {userGroups.map(([userId, userOps]) => (
+                <AccordionItem key={userId} value={userId} className="border-border/50 bg-card/50 rounded-lg px-4">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-3 text-left">
+                      <div>
+                        <p className="font-semibold">{getCreatorLabel(userId)}</p>
+                        <p className="text-xs text-muted-foreground">{userOps.length} opération{userOps.length > 1 ? 's' : ''}</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid gap-4 md:grid-cols-2 mt-4">
+                      {userOps.map((op) => (
+                        <Card key={op.id} className="border-border/50 bg-card/80">
+                          <CardHeader className="flex flex-row items-start justify-between pb-2">
+                            <div>
+                              <CardTitle className="font-rajdhani text-lg">{op.title}</CardTitle>
+                              <p className="text-xs text-muted-foreground">{new Date(op.created_at).toLocaleDateString("fr-FR")}</p>
+                            </div>
+                            <Badge className={statusColor[op.status] ?? ""}>{op.status.replace("_", " ")}</Badge>
+                          </CardHeader>
+                          <CardContent>
+                            {op.description && <p className="text-sm text-muted-foreground mb-3">{op.description}</p>}
+                            {op.participant_group && <p className="text-xs text-muted-foreground mb-1">👥 Groupe: {op.participant_group}</p>}
+                            {op.operation_date && <p className="text-xs text-muted-foreground">📅 {new Date(op.operation_date).toLocaleDateString("fr-FR")}</p>}
+                            {op.user_id === user?.id && (
+                              <div className="flex gap-2 mt-3">
+                                <Button size="sm" variant="ghost" onClick={() => openEdit(op)}><Pencil className="h-3 w-3" /></Button>
+                                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(op.id)}><Trash2 className="h-3 w-3" /></Button>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          );
+        })()}
       </div>
     </div>
   );

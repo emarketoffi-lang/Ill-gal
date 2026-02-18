@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Operations from "./pages/Operations";
+import PropositionMissions from "./pages/PropositionMissions";
 import Reunions from "./pages/Reunions";
 import Rapports from "./pages/Rapports";
 import Entretiens from "./pages/Entretiens";
@@ -44,9 +45,10 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Dashboard />} />
               <Route path="/qg" element={<QGPage />} />
               <Route path="/operations" element={<Operations />} />
+              <Route path="/proposition-missions" element={<PropositionMissions />} />
               <Route path="/reunions" element={<Reunions />} />
               <Route path="/rapports" element={<Rapports />} />
               <Route path="/entretiens" element={<Entretiens />} />

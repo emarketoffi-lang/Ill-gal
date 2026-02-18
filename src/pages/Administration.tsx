@@ -105,7 +105,7 @@ export default function Administration() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-wider font-['Rajdhani']">
+        <h1 className="text-3xl font-bold tracking-wider font-rajdhani">
           <Shield className="inline h-7 w-7 text-primary mr-2" />
           Administration
         </h1>
@@ -128,7 +128,7 @@ export default function Administration() {
                       <cfg.icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <p className="font-semibold font-['Rajdhani'] text-lg">{u.username}</p>
+                      <p className="font-semibold font-rajdhani text-lg">{u.username}</p>
                       <div className="flex items-center gap-2">
                         <Badge variant={cfg.badge as any} className="text-[10px] uppercase tracking-widest">
                           {cfg.label}

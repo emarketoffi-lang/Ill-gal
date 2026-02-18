@@ -24,6 +24,7 @@ import {
   Shield,
   Bell,
   MapPin,
+  Lightbulb,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -31,6 +32,7 @@ const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "QG", url: "/qg", icon: MapPin },
   { title: "Mission", url: "/operations", icon: Target },
+  { title: "Proposition Mission", url: "/proposition-missions", icon: Lightbulb },
   { title: "Réunions", url: "/reunions", icon: Users },
   { title: "Récapitulatifs", url: "/rapports", icon: FileText },
   { title: "Entretiens", url: "/entretiens", icon: Vote },
@@ -53,7 +55,7 @@ export function AppSidebar() {
           <Shield className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-           <p className="text-sm font-semibold truncate font-['Rajdhani'] text-lg tracking-wide">{username ?? "Assistant"}</p>
+           <p className="text-sm font-semibold truncate font-rajdhani text-lg tracking-wide">{username ?? "Assistant"}</p>
           <Badge variant={roleBadge as any} className="text-[10px] uppercase tracking-widest">
             {role === "admin" ? "Référent" : role === "responsable" ? "Responsable" : "Assistant"}
           </Badge>

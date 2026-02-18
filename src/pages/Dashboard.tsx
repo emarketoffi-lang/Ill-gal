@@ -3,20 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Target, Users, FileText, Vote, ArrowLeftRight, MessageCircle, Trash2, Shield, Crown, User } from "lucide-react";
+import { Target, Users, FileText, Vote, ArrowLeftRight, MessageCircle, Trash2, Shield, Crown, User, MapPin, Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
-const cards = [
+const allCards = [
+  { title: "QG", desc: "Quartier Général", icon: MapPin, url: "/qg", color: "text-red-400" },
   { title: "Opérations", desc: "Gérer vos Mission", icon: Target, url: "/operations", color: "text-primary" },
+  { title: "Proposition Mission", desc: "Idées de missions", icon: Lightbulb, url: "/proposition-missions", color: "text-yellow-400" },
   { title: "Réunions", desc: "Dernières réunions du groupe", icon: Users, url: "/reunions", color: "text-blue-400" },
   { title: "Rapports", desc: "Rapports de session", icon: FileText, url: "/rapports", color: "text-green-400" },
   { title: "Entretiens", desc: "Candidatures & validation", icon: Vote, url: "/entretiens", color: "text-yellow-400" },
-  { title: "Give", desc: "Registre des échanges", icon: ArrowLeftRight, url: "/echanges", color: "text-purple-400" },
+  { title: "Échanges", desc: "Registre des échanges", icon: ArrowLeftRight, url: "/echanges", color: "text-purple-400" },
   { title: "Discussion", desc: "Chat interne", icon: MessageCircle, url: "/discussion", color: "text-cyan-400" },
   { title: "Dissolutions", desc: "Historique des dissolutions", icon: Trash2, url: "/dissolutions", color: "text-orange-400" },
+  { title: "Administration", desc: "Gestion du système", icon: Shield, url: "/administration", color: "text-primary", adminOnly: true },
 ];
 
 const roleIcon: Record<AppRole, typeof Shield> = { admin: Shield, responsable: Crown, membre: User };
@@ -50,7 +53,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold tracking-wider font-['Rajdhani']">
+        <h1 className="text-4xl font-bold tracking-wider font-rajdhani">
           Bienvenue, <span className="text-primary">{username}</span>
         </h1>
         <p className="text-muted-foreground mt-1">Tableau de bord — Pôle Gestion RP</p>
@@ -59,7 +62,7 @@ export default function Dashboard() {
       {/* Hiérarchie */}
       <Card className="border-border/50 bg-card/80">
         <CardHeader>
-          <CardTitle className="text-xl font-['Rajdhani'] tracking-wider">Hiérarchie du Pôle</CardTitle>
+          <CardTitle className="text-xl font-rajdhani tracking-wider">Hiérarchie du Pôle</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -92,14 +95,16 @@ export default function Dashboard() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {cards.map((c) => (
+        {allCards
+          .filter((c) => !('adminOnly' in c && c.adminOnly) || role === "admin")
+          .map((c) => (
           <Link key={c.title} to={c.url}>
             <Card className="border-border/50 bg-card/80 hover:bg-accent/30 hover:border-primary/30 transition-all cursor-pointer group">
               <CardHeader className="flex flex-row items-center gap-3 pb-2">
                 <div className={`p-2 rounded-lg bg-muted/50 ${c.color} group-hover:scale-110 transition-transform`}>
                   <c.icon className="h-5 w-5" />
                 </div>
-                <CardTitle className="text-lg font-['Rajdhani']">{c.title}</CardTitle>
+                <CardTitle className="text-lg font-rajdhani">{c.title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">{c.desc}</p>

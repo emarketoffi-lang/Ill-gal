@@ -69,14 +69,14 @@ export default function Reunions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><Users className="h-7 w-7 text-blue-400" />Réunions</h1>
+          <h1 className="text-3xl font-bold font-rajdhani tracking-wider flex items-center gap-2"><Users className="h-7 w-7 text-blue-400" />Réunions</h1>
           <p className="text-muted-foreground">Historique des réunions du groupe</p>
         </div>
         {canCreate && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Ajouter</Button></DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-['Rajdhani'] text-xl">Nouvelle réunion</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-rajdhani text-xl">Nouvelle réunion</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-muted/50" />
                 <Input type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} className="bg-muted/50" />
@@ -95,7 +95,7 @@ export default function Reunions() {
           <Card key={r.id} className="border-border/50 bg-card/80">
             <CardHeader className="flex flex-row items-start justify-between pb-2">
               <div>
-                <CardTitle className="font-['Rajdhani'] text-lg">{r.title}</CardTitle>
+                <CardTitle className="font-rajdhani text-lg">{r.title}</CardTitle>
                 <p className="text-xs text-muted-foreground">📅 {new Date(r.reunion_date).toLocaleString("fr-FR")}</p>
                 <p className="text-xs text-muted-foreground">Créée par: {getCreatorLabel(r.user_id)}</p>
               </div>

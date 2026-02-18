@@ -183,7 +183,7 @@ export default function Entretiens() {
       <Card key={e.id} className={`border-border/50 bg-card/80 ${isTrashed ? "opacity-70" : ""}`}>
         <CardHeader className="flex flex-row items-start justify-between pb-2">
           <div>
-            <CardTitle className="font-['Rajdhani'] text-lg">{e.candidate_name}</CardTitle>
+            <CardTitle className="font-rajdhani text-lg">{e.candidate_name}</CardTitle>
             {e.group_name && <p className="text-xs text-muted-foreground">Groupe: {e.group_name}</p>}
             <p className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleDateString("fr-FR")}</p>
             <p className="text-xs text-muted-foreground">Créé par: {getCreatorLabel(e.user_id)}</p>
@@ -234,14 +234,14 @@ export default function Entretiens() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><Vote className="h-7 w-7 text-yellow-400" />Entretiens & Validation</h1>
+          <h1 className="text-3xl font-bold font-rajdhani tracking-wider flex items-center gap-2"><Vote className="h-7 w-7 text-yellow-400" />Entretiens & Validation</h1>
           <p className="text-muted-foreground">Candidatures et votes internes</p>
         </div>
         {canCreate && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Publier</Button></DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-['Rajdhani'] text-xl">Nouvel entretien</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-rajdhani text-xl">Nouvel entretien</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <Input placeholder="Nom du candidat" value={candidateName} onChange={(e) => setCandidateName(e.target.value)} className="bg-muted/50" />
                 <Input placeholder="Groupe (optionnel)" value={groupName} onChange={(e) => setGroupName(e.target.value)} className="bg-muted/50" />
@@ -278,7 +278,7 @@ export default function Entretiens() {
       <Dialog open={avisOpen} onOpenChange={setAvisOpen}>
         <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="font-['Rajdhani'] text-xl">Avis – {selectedEntretien?.candidate_name ?? "Entretien"}</DialogTitle>
+            <DialogTitle className="font-rajdhani text-xl">Avis – {selectedEntretien?.candidate_name ?? "Entretien"}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3">

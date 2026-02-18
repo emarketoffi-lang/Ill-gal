@@ -296,9 +296,23 @@ export default function QG() {
     map.on("click", onMapClick);
     mapRef.current = map;
 
+    // Force multiple size invalidations to ensure proper rendering
     requestAnimationFrame(() => {
       map.invalidateSize();
     });
+    
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 50);
+    
+    setTimeout(() => {
+      map.invalidateSize();
+      map.fitBounds(MAP_BOUNDS, { animate: false, maxZoom: 2 });
+    }, 150);
+    
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 300);
 
     return () => {
       map.off("click", onMapClick);
@@ -307,7 +321,7 @@ export default function QG() {
       tileRef.current = null;
       markersRef.current = null;
     };
-  }, []);
+  }, [onMapClick]);
 
   useEffect(() => {
     if (!mapRef.current || !containerRef.current) return;
@@ -347,7 +361,7 @@ export default function QG() {
       {/* ── Sidebar ── */}
       <aside className="w-72 h-full min-h-0 shrink-0 border-r border-border/50 bg-card/80 flex flex-col overflow-y-auto">
         <div className="p-4 border-b border-border/50">
-          <h2 className="text-lg font-bold font-['Rajdhani'] tracking-wider">Dashboard QG</h2>
+          <h2 className="text-lg font-bold font-rajdhani tracking-wider">Dashboard QG</h2>
           <p className="text-xs text-muted-foreground">Gestion Staff RP</p>
         </div>
 
@@ -463,7 +477,7 @@ export default function QG() {
       <div className="flex-1 h-full min-h-0 flex flex-col overflow-hidden bg-black">
         <div className="p-4 border-b border-border/50 bg-card/80 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold font-['Rajdhani'] tracking-wider">Carte Opérationnelle Los Santos</h2>
+            <h2 className="text-lg font-bold font-rajdhani tracking-wider">Carte Opérationnelle Los Santos</h2>
             <p className="text-xs text-muted-foreground">
               {addMode ? "Cliquez sur la carte pour placer un QG" : "Passez en mode ajout puis cliquez sur la carte pour placer un QG"}
             </p>
@@ -480,8 +494,8 @@ export default function QG() {
           )}
         </div>
 
-        <div className="flex-1 relative min-h-0 overflow-hidden bg-black">
-          <div ref={containerRef} className="absolute inset-0" />
+        <div className="flex-1 relative min-h-0 overflow-hidden bg-black w-full">
+          <div ref={containerRef} className="absolute inset-0 w-full h-full" />
         </div>
       </div>
 
@@ -489,7 +503,7 @@ export default function QG() {
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) setDialogOpen(false); }}>
         <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="font-['Rajdhani'] text-xl flex items-center gap-2">
+            <DialogTitle className="font-rajdhani text-xl flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" /> Nouveau QG
             </DialogTitle>
           </DialogHeader>

@@ -89,7 +89,7 @@ export default function Auth() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 border border-primary/30">
             <Shield className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold tracking-wider text-foreground font-['Rajdhani']">
+          <CardTitle className="text-3xl font-bold tracking-wider text-foreground font-rajdhani">
             PÔLE GESTION RP
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-1">

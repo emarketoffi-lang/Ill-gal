@@ -44,14 +44,14 @@ export default function Dissolutions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-['Rajdhani'] tracking-wider flex items-center gap-2"><Trash2 className="h-7 w-7 text-orange-400" />Dissolutions</h1>
+          <h1 className="text-3xl font-bold font-rajdhani tracking-wider flex items-center gap-2"><Trash2 className="h-7 w-7 text-orange-400" />Dissolutions</h1>
           <p className="text-muted-foreground">Historique des dissolutions de groupe</p>
         </div>
         {canCreate && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" />Ajouter</Button></DialogTrigger>
             <DialogContent className="bg-card border-border">
-              <DialogHeader><DialogTitle className="font-['Rajdhani'] text-xl">Nouvelle dissolution</DialogTitle></DialogHeader>
+              <DialogHeader><DialogTitle className="font-rajdhani text-xl">Nouvelle dissolution</DialogTitle></DialogHeader>
               <div className="space-y-3">
                 <Input placeholder="Nom du groupe" value={groupName} onChange={(e) => setGroupName(e.target.value)} className="bg-muted/50" />
                 <Input placeholder="Responsable" value={responsibleName} onChange={(e) => setResponsibleName(e.target.value)} className="bg-muted/50" />
@@ -73,7 +73,7 @@ export default function Dissolutions() {
           <Card key={d.id} className="border-border/50 bg-card/80">
             <CardHeader className="flex flex-row items-start justify-between pb-2">
               <div>
-                <CardTitle className="font-['Rajdhani'] text-lg text-primary">{d.group_name}</CardTitle>
+                <CardTitle className="font-rajdhani text-lg text-primary">{d.group_name}</CardTitle>
                 <p className="text-xs text-muted-foreground">📅 {new Date(d.dissolution_date).toLocaleDateString("fr-FR")} • Responsable: {d.responsible_name}</p>
               </div>
               {(d.user_id === user?.id || role === "admin") && (
