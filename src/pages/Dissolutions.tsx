@@ -19,7 +19,7 @@ export default function Dissolutions() {
   const [reason, setReason] = useState("");
   const [responsibleName, setResponsibleName] = useState("");
 
-  const canCreate = role === "admin" || role === "responsable";
+  const canCreate = true;
 
   const fetch_ = async () => {
     const { data } = await supabase.from("dissolutions").select("*").order("dissolution_date", { ascending: false });

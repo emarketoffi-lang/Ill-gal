@@ -30,7 +30,7 @@ export default function Operations() {
   const [status, setStatus] = useState("en_cours");
   const [opDate, setOpDate] = useState("");
 
-  const canCreate = role === "admin" || role === "responsable";
+  const canCreate = true;
 
   const fetchOps = async () => {
     const { data } = await supabase.from("operations").select("*").order("created_at", { ascending: false });

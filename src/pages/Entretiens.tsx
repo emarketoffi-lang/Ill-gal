@@ -30,7 +30,7 @@ export default function Entretiens() {
   const [avisLoading, setAvisLoading] = useState(false);
 
   const isAdmin = role === "admin";
-  const canCreate = isAdmin || role === "responsable";
+  const canCreate = true;
   const canVote = isAdmin || role === "responsable";
 
   const fetch_ = async () => {

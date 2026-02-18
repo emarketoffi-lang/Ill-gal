@@ -130,7 +130,7 @@ export default function QG() {
   const { role, user } = useAuth();
   const { toast } = useToast();
   const qc = useQueryClient();
-  const canManage = role === "admin" || role === "responsable";
+  const canManage = true;
 
   /* ── State ── */
   const [filterType, setFilterType] = useState("all");

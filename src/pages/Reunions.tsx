@@ -21,7 +21,7 @@ export default function Reunions() {
   const [participants, setParticipants] = useState("");
   const [summary, setSummary] = useState("");
 
-  const canCreate = role === "admin" || role === "responsable";
+  const canCreate = true;
 
   const fetch_ = async () => {
     const { data } = await supabase.from("reunions").select("*").order("reunion_date", { ascending: false });
