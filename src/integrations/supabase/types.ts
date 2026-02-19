@@ -501,6 +501,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_group_member: {
+        Args: { p_group_name: string; p_user_id: string; p_username: string }
+        Returns: undefined
+      }
       add_user_to_group: {
         Args: { p_group_name: string; p_user_id: string }
         Returns: Json
@@ -526,6 +530,14 @@ export type Database = {
         Returns: undefined
       }
       get_all_groups: { Args: never; Returns: Json }
+      get_group_members: {
+        Args: never
+        Returns: {
+          group_name: string
+          user_id: string
+          username: string
+        }[]
+      }
       get_user_groups: {
         Args: never
         Returns: {
@@ -543,6 +555,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      remove_group_member: {
+        Args: { p_group_name: string; p_user_id: string }
+        Returns: undefined
       }
       remove_user_from_group: {
         Args: { p_group_name: string; p_user_id: string }
