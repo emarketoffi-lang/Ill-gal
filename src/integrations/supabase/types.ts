@@ -304,6 +304,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           discord_id: string | null
+          gm_group: string | null
           id: string
           user_id: string
           username: string
@@ -312,6 +313,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           discord_id?: string | null
+          gm_group?: string | null
           id?: string
           user_id: string
           username: string
@@ -320,6 +322,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           discord_id?: string | null
+          gm_group?: string | null
           id?: string
           user_id?: string
           username?: string
@@ -501,10 +504,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_group_member: {
-        Args: { p_group_name: string; p_user_id: string; p_username: string }
-        Returns: undefined
-      }
       add_user_to_group: {
         Args: { p_group_name: string; p_user_id: string }
         Returns: Json
@@ -530,10 +529,10 @@ export type Database = {
         Returns: undefined
       }
       get_all_groups: { Args: never; Returns: Json }
-      get_group_members: {
+      get_gm_groups: {
         Args: never
         Returns: {
-          group_name: string
+          gm_group: string
           user_id: string
           username: string
         }[]
@@ -556,16 +555,16 @@ export type Database = {
         }
         Returns: boolean
       }
-      remove_group_member: {
-        Args: { p_group_name: string; p_user_id: string }
-        Returns: undefined
-      }
       remove_user_from_group: {
         Args: { p_group_name: string; p_user_id: string }
         Returns: Json
       }
       remove_user_from_group_fn: {
         Args: { p_group_name: string; p_user_id: string }
+        Returns: undefined
+      }
+      set_gm_group: {
+        Args: { p_group_name?: string; p_user_id: string }
         Returns: undefined
       }
     }
