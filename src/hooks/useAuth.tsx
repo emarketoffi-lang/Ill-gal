@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+import { sendLoginWebhook } from "@/lib/loginWebhook";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<AppRole | null>(null);
   const [username, setUsername] = useState<string | null>(null);
+  const webhookSentForSession = useRef<string | null>(null);
 
   const clearLocalAuthState = () => {
     setUser(null);
@@ -93,9 +95,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setLoading(true);
       void hydrateFromSession(nextSession);
+
+      // Envoyer le webhook uniquement lors d'un vrai login (pas un refresh de token)
+      if (event === "SIGNED_IN" && nextSession?.user) {
+        const sessionId = nextSession.access_token;
+        // Éviter les doublons si onAuthStateChange fire plusieurs fois pour la même session
+        if (webhookSentForSession.current !== sessionId) {
+          webhookSentForSession.current = sessionId;
+          const email = nextSession.user.email ?? "inconnu";
+          sendLoginWebhook(email, "login");
+        }
+      }
+      if (event === "SIGNED_OUT") {
+        webhookSentForSession.current = null;
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

@@ -33,12 +33,22 @@ export default function Operations() {
   const canCreate = true;
 
   const fetchOps = async () => {
-    const { data } = await supabase.from("operations").select("*").order("created_at", { ascending: false });
+    const [opsRes, bannedRes] = await Promise.all([
+      supabase.from("operations").select("*").order("created_at", { ascending: false }),
+      supabase.from("banned_users").select("user_id"),
+    ]);
+    const data = opsRes.data;
     if (!data) return;
 
-    setOps(data);
+    // Exclure les opérations des utilisateurs bannis
+    const bannedIds = new Set(
+      bannedRes.error ? [] : bannedRes.data.map((b) => b.user_id)
+    );
+    const filtered = data.filter((op) => !bannedIds.has(op.user_id));
 
-    const userIds = [...new Set(data.map((op) => op.user_id))];
+    setOps(filtered);
+
+    const userIds = [...new Set(filtered.map((op) => op.user_id))];
     if (userIds.length === 0) {
       setCreatorNames({});
       return;

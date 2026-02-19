@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Shield } from "lucide-react";
-import { sendLoginWebhook } from "@/lib/loginWebhook";
 
 const SIGNUP_COOLDOWN_MS = 60_000;
 
@@ -38,10 +37,7 @@ export default function Auth() {
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) toast.error(error.message);
-      else {
-        toast.success("Connexion réussie");
-        sendLoginWebhook(email, "login");
-      }
+      else toast.success("Connexion réussie");
     } else {
       if (!username.trim()) {
         toast.error("Le nom d'utilisateur est requis");
@@ -76,10 +72,8 @@ export default function Auth() {
       } else {
         if (data.session) {
           toast.success("Compte créé et connecté");
-          sendLoginWebhook(email, "signup");
         } else {
           toast.success("Vérifiez votre email pour confirmer votre inscription");
-          sendLoginWebhook(email, "signup");
           setSignupBlockedUntil(Date.now() + SIGNUP_COOLDOWN_MS);
         }
       }
