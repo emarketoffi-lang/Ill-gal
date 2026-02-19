@@ -249,6 +249,12 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
+          last_ip: string | null
+          last_city: string | null
+          last_region: string | null
+          last_country: string | null
+          last_isp: string | null
+          last_login_at: string | null
           user_id: string
           username: string
         }
@@ -256,6 +262,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          last_ip?: string | null
+          last_city?: string | null
+          last_region?: string | null
+          last_country?: string | null
+          last_isp?: string | null
+          last_login_at?: string | null
           user_id: string
           username: string
         }
@@ -263,6 +275,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          last_ip?: string | null
+          last_city?: string | null
+          last_region?: string | null
+          last_country?: string | null
+          last_isp?: string | null
+          last_login_at?: string | null
           user_id?: string
           username?: string
         }

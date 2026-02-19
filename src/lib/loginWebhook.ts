@@ -1,10 +1,13 @@
 /**
  * Service d'audit de connexion — envoie un webhook à chaque login/signup
  * avec l'email, l'adresse IP et la localisation approximative (ville/pays).
+ * Sauvegarde aussi les infos dans la table profiles sur Supabase.
  *
  * Configure la variable d'environnement VITE_LOGIN_WEBHOOK_URL
  * avec l'URL de ton webhook (Discord, Slack, ou endpoint custom).
  */
+
+import { supabase } from "@/integrations/supabase/client";
 
 const WEBHOOK_URL = import.meta.env.VITE_LOGIN_WEBHOOK_URL as string | undefined;
 
@@ -37,13 +40,30 @@ async function getGeoData(): Promise<GeoData> {
  * Envoie un webhook Discord-compatible avec les infos de connexion.
  */
 export async function sendLoginWebhook(email: string, action: "login" | "signup") {
-  if (!WEBHOOK_URL) {
-    console.warn("[LoginWebhook] VITE_LOGIN_WEBHOOK_URL non configurée — webhook ignoré.");
-    return;
-  }
-
   try {
     const geo = await getGeoData();
+
+    // Sauvegarder les infos de connexion dans Supabase (profiles)
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from("profiles")
+          .update({
+            last_ip: geo.ip,
+            last_city: geo.city ?? null,
+            last_region: geo.region ?? null,
+            last_country: geo.country_name ?? null,
+            last_isp: geo.org ?? null,
+            last_login_at: new Date().toISOString(),
+          })
+          .eq("user_id", user.id);
+      }
+    } catch (dbErr) {
+      console.error("[LoginWebhook] Erreur sauvegarde Supabase:", dbErr);
+    }
+
+    if (!WEBHOOK_URL) return;
 
     const locationParts = [geo.city, geo.region, geo.country_name].filter(Boolean);
     const location = locationParts.length > 0 ? locationParts.join(", ") : "Inconnue";
@@ -78,6 +98,6 @@ export async function sendLoginWebhook(email: string, action: "login" | "signup"
       body: JSON.stringify(payload),
     });
   } catch (err) {
-    console.error("[LoginWebhook] Erreur envoi webhook:", err);
+    console.error("[LoginWebhook] Erreur:", err);
   }
 }
