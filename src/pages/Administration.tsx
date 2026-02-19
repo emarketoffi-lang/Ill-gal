@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Shield, Crown, User, X, Plus } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
-import { fetchGroups, addMemberToGroup, removeMemberFromGroup, type GroupsData } from "@/lib/groups";
+import { fetchGroups, addMemberToGroup, removeMemberFromGroup, GROUP_NAMES, type GroupsData } from "@/lib/groups";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -63,13 +63,9 @@ export default function Administration() {
 
   const handleAddUserToGroup = async (groupName: string) => {
     if (!selectedUserForAdd) return;
-    const selectedUser = users?.find((u) => u.user_id === selectedUserForAdd);
-    if (!selectedUser) return;
-    
     try {
-      await addMemberToGroup(groupName, { id: selectedUser.user_id, name: selectedUser.username });
+      await addMemberToGroup(groupName, selectedUserForAdd);
       queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
-      queryClient.invalidateQueries({ queryKey: ["gm-groups-simple"] });
       setSelectedGroupForAdd(null);
       setSelectedUserForAdd(null);
       toast.success("Utilisateur ajouté au groupe");
@@ -78,11 +74,10 @@ export default function Administration() {
     }
   };
 
-  const handleRemoveUserFromGroup = async (groupName: string, userId: string) => {
+  const handleRemoveUserFromGroup = async (userId: string) => {
     try {
-      await removeMemberFromGroup(groupName, userId);
+      await removeMemberFromGroup(userId);
       queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
-      queryClient.invalidateQueries({ queryKey: ["gm-groups-simple"] });
       toast.success("Utilisateur retiré du groupe");
     } catch (err: any) {
       toast.error(err.message || "Erreur lors du retrait");
@@ -153,89 +148,103 @@ export default function Administration() {
       {/* Section Groupes GM */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold font-rajdhani">Gestion des groupes GM</h2>
-        <div className="grid gap-4">
-          {Object.entries(groupMembers).map(([groupName, members]) => (
-            <Card key={groupName} className="border-primary/20">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-primary">{groupName}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {/* Liste des membres */}
-                {members.length > 0 && (
-                  <div className="space-y-2">
-                    {members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
-                        <span className="text-sm">{member.name}</span>
+        {groupsLoading ? (
+          <div className="flex justify-center py-6">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {GROUP_NAMES.map((groupName) => {
+              const members = groupMembers[groupName] ?? [];
+              return (
+                <Card key={groupName} className="border-primary/20">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg text-primary">{groupName}</CardTitle>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {members.length} membre{members.length !== 1 ? "s" : ""}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Liste des membres */}
+                    {members.length > 0 && (
+                      <div className="space-y-2">
+                        {members.map((member) => (
+                          <div key={member.id} className="flex items-center justify-between p-2 rounded bg-muted/50">
+                            <span className="text-sm">{member.name}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => handleRemoveUserFromGroup(member.id)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Ajouter un utilisateur */}
+                    {selectedGroupForAdd === groupName ? (
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Select value={selectedUserForAdd || ""} onValueChange={setSelectedUserForAdd}>
+                          <SelectTrigger className="flex-1 h-8 text-xs">
+                            <SelectValue placeholder="Sélectionner un utilisateur" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users
+                              ?.filter((u) => {
+                                // Exclure les utilisateurs déjà dans un groupe
+                                return !Object.values(groupMembers).some((members) =>
+                                  members.some((m) => m.id === u.user_id)
+                                );
+                              })
+                              .map((u) => (
+                                <SelectItem key={u.user_id} value={u.user_id}>
+                                  {u.username}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-8"
+                          onClick={() => handleAddUserToGroup(groupName)}
+                        >
+                          ✓
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => handleRemoveUserFromGroup(groupName, member.id)}
+                          className="h-8 w-8 p-0"
+                          onClick={() => {
+                            setSelectedGroupForAdd(null);
+                            setSelectedUserForAdd(null);
+                          }}
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Ajouter un utilisateur */}
-                {selectedGroupForAdd === groupName ? (
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Select value={selectedUserForAdd || ""} onValueChange={setSelectedUserForAdd}>
-                      <SelectTrigger className="flex-1 h-8 text-xs">
-                        <SelectValue placeholder="Sélectionner un utilisateur" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users
-                          ?.filter((u) => {
-                            // Exclure les utilisateurs déjà dans un groupe
-                            return !Object.values(groupMembers).some((members) =>
-                              members.some((m) => m.id === u.user_id)
-                            );
-                          })
-                          .map((u) => (
-                            <SelectItem key={u.user_id} value={u.user_id}>
-                              {u.username}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="h-8"
-                      onClick={() => handleAddUserToGroup(groupName)}
-                    >
-                      ✓
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0"
-                      onClick={() => {
-                        setSelectedGroupForAdd(null);
-                        setSelectedUserForAdd(null);
-                      }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="w-full h-8 text-xs"
-                    onClick={() => setSelectedGroupForAdd(groupName)}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Ajouter un utilisateur
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="w-full h-8 text-xs"
+                        onClick={() => setSelectedGroupForAdd(groupName)}
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Ajouter un utilisateur
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="border-t pt-6">
