@@ -13,14 +13,11 @@ import { getGroupsFromSupabase, addMemberToGroupSupabase, removeMemberFromGroupS
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
-const roleConfig: Record<string, { label: string; icon: typeof Shield; color: string; badge: string }> = {
+const roleConfig: Record<AppRole, { label: string; icon: typeof Shield; color: string; badge: string }> = {
   admin: { label: "Référent", icon: Shield, color: "text-primary", badge: "destructive" },
   responsable: { label: "Responsable", icon: Crown, color: "text-yellow-500", badge: "secondary" },
-  assistant: { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" },
   membre: { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" },
 };
-
-const defaultRoleConfig = { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" };
 
 export default function Administration() {
   const { role, user } = useAuth();
@@ -55,7 +52,7 @@ export default function Administration() {
       return profilesRes.data.map((p) => ({
         user_id: p.user_id,
         username: p.username,
-        role: (rolesMap.get(p.user_id) ?? "assistant") as AppRole,
+        role: (rolesMap.get(p.user_id) ?? "membre") as AppRole,
         isBanned: bannedMap.has(p.user_id),
         bannedReason: bannedMap.get(p.user_id)?.reason ?? null,
         bannedAt: bannedMap.get(p.user_id)?.banned_at ?? null,
@@ -250,7 +247,7 @@ export default function Administration() {
         ) : (
           <div className="grid gap-3">
             {users?.map((u) => {
-              const cfg = roleConfig[u.role] ?? defaultRoleConfig;
+              const cfg = roleConfig[u.role];
               return (
                 <Card key={u.user_id} className="border-border/50 bg-card/80">
                   <CardContent className="flex items-center justify-between p-4">
@@ -288,7 +285,7 @@ export default function Administration() {
                         <SelectContent>
                           <SelectItem value="admin">Référent</SelectItem>
                           <SelectItem value="responsable">Responsable</SelectItem>
-                          <SelectItem value="assistant">Assistant</SelectItem>
+                          <SelectItem value="membre">Assistant</SelectItem>
                         </SelectContent>
                       </Select>
                       {u.user_id !== user?.id && !u.isBanned && (
