@@ -300,16 +300,16 @@ export default function QG() {
     requestAnimationFrame(() => {
       map.invalidateSize();
     });
-    
+
     setTimeout(() => {
       map.invalidateSize();
     }, 50);
-    
+
     setTimeout(() => {
       map.invalidateSize();
       map.fitBounds(MAP_BOUNDS, { animate: false, maxZoom: 2 });
     }, 150);
-    
+
     setTimeout(() => {
       map.invalidateSize();
     }, 300);
@@ -357,7 +357,7 @@ export default function QG() {
      Render
      ───────────────────────────────────────────── */
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] min-h-0 -m-6 overflow-hidden">
+    <div className="flex h-[calc(100vh-3.5rem)] min-h-0 -m-6 overflow-hidden">
       {/* ── Sidebar ── */}
       <aside className="w-72 h-full min-h-0 shrink-0 border-r border-border/50 bg-card/80 flex flex-col overflow-y-auto">
         <div className="p-4 border-b border-border/50">
