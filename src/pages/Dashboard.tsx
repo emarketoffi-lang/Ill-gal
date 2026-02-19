@@ -34,18 +34,25 @@ export default function Dashboard() {
   const { data: hierarchy } = useQuery({
     queryKey: ["hierarchy"],
     queryFn: async () => {
-      const [profilesRes, rolesRes] = await Promise.all([
+      const [profilesRes, rolesRes, bannedRes] = await Promise.all([
         supabase.from("profiles").select("user_id, username"),
         supabase.from("user_roles").select("user_id, role"),
+        supabase.from("banned_users").select("user_id"),
       ]);
       if (profilesRes.error) throw profilesRes.error;
       if (rolesRes.error) throw rolesRes.error;
+      // Collect banned user IDs (ignore error if table doesn't exist yet)
+      const bannedIds = new Set(
+        bannedRes.error ? [] : bannedRes.data.map((b) => b.user_id)
+      );
       const rolesMap = new Map(rolesRes.data.map((r) => [r.user_id, r.role as AppRole]));
       const grouped: Record<AppRole, string[]> = { admin: [], responsable: [], membre: [] };
-      profilesRes.data.forEach((p) => {
-        const r = rolesMap.get(p.user_id) ?? "membre";
-        grouped[r].push(p.username);
-      });
+      profilesRes.data
+        .filter((p) => !bannedIds.has(p.user_id))
+        .forEach((p) => {
+          const r = rolesMap.get(p.user_id) ?? "membre";
+          grouped[r].push(p.username);
+        });
       return grouped;
     },
   });
