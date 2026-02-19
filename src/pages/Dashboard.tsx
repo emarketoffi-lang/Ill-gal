@@ -22,11 +22,11 @@ const allCards = [
   { title: "Administration", desc: "Gestion du système", icon: Shield, url: "/administration", color: "text-primary", adminOnly: true },
 ];
 
-const roleIcon: Record<AppRole, typeof Shield> = { admin: Shield, responsable: Crown, assistant: User };
-const roleColor: Record<AppRole, string> = { admin: "text-primary", responsable: "text-yellow-500", assistant: "text-muted-foreground" };
-const roleBadge: Record<AppRole, string> = { admin: "destructive", responsable: "secondary", assistant: "outline" };
+const roleIcon: Record<string, typeof Shield> = { admin: Shield, responsable: Crown, assistant: User, membre: User };
+const roleColor: Record<string, string> = { admin: "text-primary", responsable: "text-yellow-500", assistant: "text-muted-foreground", membre: "text-muted-foreground" };
+const roleBadge: Record<string, string> = { admin: "destructive", responsable: "secondary", assistant: "outline", membre: "outline" };
 const roleOrder: AppRole[] = ["admin", "responsable", "assistant"];
-const roleLabel: Record<AppRole, string> = { admin: "Référent", responsable: "Responsable", assistant: "Assistant" };
+const roleLabel: Record<string, string> = { admin: "Référent", responsable: "Responsable", assistant: "Assistant", membre: "Assistant" };
 
 export default function Dashboard() {
   const { username, role } = useAuth();

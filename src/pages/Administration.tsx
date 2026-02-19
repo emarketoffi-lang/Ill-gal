@@ -13,11 +13,14 @@ import { getGroupsFromSupabase, addMemberToGroupSupabase, removeMemberFromGroupS
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
-const roleConfig: Record<AppRole, { label: string; icon: typeof Shield; color: string; badge: string }> = {
+const roleConfig: Record<string, { label: string; icon: typeof Shield; color: string; badge: string }> = {
   admin: { label: "Référent", icon: Shield, color: "text-primary", badge: "destructive" },
   responsable: { label: "Responsable", icon: Crown, color: "text-yellow-500", badge: "secondary" },
   assistant: { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" },
+  membre: { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" },
 };
+
+const defaultRoleConfig = { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" };
 
 export default function Administration() {
   const { role, user } = useAuth();
@@ -247,7 +250,7 @@ export default function Administration() {
         ) : (
           <div className="grid gap-3">
             {users?.map((u) => {
-              const cfg = roleConfig[u.role];
+              const cfg = roleConfig[u.role] ?? defaultRoleConfig;
               return (
                 <Card key={u.user_id} className="border-border/50 bg-card/80">
                   <CardContent className="flex items-center justify-between p-4">
