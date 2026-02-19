@@ -1,5 +1,5 @@
 // Gestion des groupes GM via la colonne gm_group de la table profiles
-// Les données sont partagées entre tous les utilisateurs
+// Utilise .from("profiles") directement (déjà dans le cache PostgREST)
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,7 +22,10 @@ export async function getGroupsFromSupabase(): Promise<GroupsData> {
     groups[name] = [];
   }
 
-  const { data, error } = await supabase.rpc("get_gm_groups");
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("user_id, username, gm_group")
+    .not("gm_group", "is", null);
 
   if (error) {
     console.error("Erreur chargement groupes:", error);
@@ -40,19 +43,19 @@ export async function getGroupsFromSupabase(): Promise<GroupsData> {
 
 // Ajouter un membre à un groupe
 export async function addMemberToGroupSupabase(groupName: string, member: GroupMember): Promise<void> {
-  const { error } = await supabase.rpc("set_gm_group", {
-    p_user_id: member.id,
-    p_group_name: groupName,
-  });
+  const { error } = await supabase
+    .from("profiles")
+    .update({ gm_group: groupName })
+    .eq("user_id", member.id);
   if (error) throw error;
 }
 
 // Retirer un membre d'un groupe (met gm_group à null)
 export async function removeMemberFromGroupSupabase(groupName: string, userId: string): Promise<void> {
-  const { error } = await supabase.rpc("set_gm_group", {
-    p_user_id: userId,
-    p_group_name: null,
-  });
+  const { error } = await supabase
+    .from("profiles")
+    .update({ gm_group: null })
+    .eq("user_id", userId);
   if (error) throw error;
 }
 
