@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -35,86 +35,89 @@ export type Database = {
         }
         Relationships: []
       }
-      group_members: {
+      corbeille: {
         Row: {
+          content: Json
+          deleted_at: string | null
+          deleted_by: string
           id: string
-          group_name: string
-          user_id: string
-          username: string
-          created_at: string
+          item_type: string
+          original_id: string
         }
         Insert: {
+          content: Json
+          deleted_at?: string | null
+          deleted_by: string
           id?: string
-          group_name: string
-          user_id: string
-          username: string
-          created_at?: string
+          item_type: string
+          original_id: string
         }
         Update: {
+          content?: Json
+          deleted_at?: string | null
+          deleted_by?: string
           id?: string
-          group_name?: string
-          user_id?: string
-          username?: string
-          created_at?: string
+          item_type?: string
+          original_id?: string
         }
         Relationships: []
       }
       dissolutions: {
         Row: {
-          created_at: string
-          dissolution_date: string
-          group_name: string
+          created_at: string | null
+          description: string | null
+          dissolution_date: string | null
           id: string
-          reason: string
-          responsible_name: string
+          title: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
-          dissolution_date?: string
-          group_name: string
+          created_at?: string | null
+          description?: string | null
+          dissolution_date?: string | null
           id?: string
-          reason: string
-          responsible_name: string
+          title: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
-          dissolution_date?: string
-          group_name?: string
+          created_at?: string | null
+          description?: string | null
+          dissolution_date?: string | null
           id?: string
-          reason?: string
-          responsible_name?: string
+          title?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
       }
       echanges: {
         Row: {
-          amount: string | null
-          created_at: string
-          description: string
-          donor_name: string
+          created_at: string | null
+          description: string | null
+          echange_date: string | null
           id: string
-          receiver_name: string
+          title: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          amount?: string | null
-          created_at?: string
-          description: string
-          donor_name: string
+          created_at?: string | null
+          description?: string | null
+          echange_date?: string | null
           id?: string
-          receiver_name: string
+          title: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          amount?: string | null
-          created_at?: string
-          description?: string
-          donor_name?: string
+          created_at?: string | null
+          description?: string | null
+          echange_date?: string | null
           id?: string
-          receiver_name?: string
+          title?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -122,123 +125,92 @@ export type Database = {
       entretiens: {
         Row: {
           candidate_name: string
-          created_at: string
-          deleted_at: string | null
+          created_at: string | null
           group_name: string | null
           id: string
-          status: string
+          status: string | null
           summary: string
+          updated_at: string | null
           user_id: string
+          username: string
         }
         Insert: {
           candidate_name: string
-          created_at?: string
-          deleted_at?: string | null
+          created_at?: string | null
           group_name?: string | null
           id?: string
-          status?: string
+          status?: string | null
           summary: string
+          updated_at?: string | null
           user_id: string
+          username: string
         }
         Update: {
           candidate_name?: string
-          created_at?: string
-          deleted_at?: string | null
+          created_at?: string | null
           group_name?: string | null
           id?: string
-          status?: string
+          status?: string | null
           summary?: string
+          updated_at?: string | null
           user_id?: string
+          username?: string
         }
         Relationships: []
       }
-      entretien_avis: {
+      group_members: {
         Row: {
-          content: string
           created_at: string
-          entretien_id: string
+          group_name: string
           id: string
           user_id: string
+          username: string
         }
         Insert: {
-          content: string
           created_at?: string
-          entretien_id: string
+          group_name: string
           id?: string
           user_id: string
+          username: string
         }
         Update: {
-          content?: string
           created_at?: string
-          entretien_id?: string
+          group_name?: string
           id?: string
           user_id?: string
+          username?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "entretien_avis_entretien_id_fkey"
-            columns: ["entretien_id"]
-            isOneToOne: false
-            referencedRelation: "entretiens"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       messages: {
         Row: {
           content: string
-          created_at: string
+          created_at: string | null
           id: string
           user_id: string
+          username: string
         }
         Insert: {
           content: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           user_id: string
+          username: string
         }
         Update: {
           content?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           user_id?: string
+          username?: string
         }
         Relationships: []
       }
-      notifications: {
+      mission_proposals: {
         Row: {
           created_at: string
+          description: string
           id: string
-          message: string | null
-          read: boolean
-          title: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message?: string | null
-          read?: boolean
-          title: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string | null
-          read?: boolean
-          title?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      operations: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          operation_date: string | null
-          participant_group: string | null
           status: string
           title: string
           updated_at: string
@@ -246,10 +218,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          description?: string | null
+          description: string
           id?: string
-          operation_date?: string | null
-          participant_group?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -257,10 +227,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          description?: string | null
+          description?: string
           id?: string
-          operation_date?: string | null
-          participant_group?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -268,43 +236,91 @@ export type Database = {
         }
         Relationships: []
       }
+      operations: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          operation_date: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          operation_date?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          operation_date?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      people: {
+        Row: {
+          created_at: string | null
+          discord_id: string | null
+          id: string
+          role: string
+          updated_at: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string | null
+          discord_id?: string | null
+          id?: string
+          role: string
+          updated_at?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string | null
+          discord_id?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          discord_id: string | null
           id: string
-          last_ip: string | null
-          last_city: string | null
-          last_region: string | null
-          last_country: string | null
-          last_isp: string | null
-          last_login_at: string | null
           user_id: string
           username: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          discord_id?: string | null
           id?: string
-          last_ip?: string | null
-          last_city?: string | null
-          last_region?: string | null
-          last_country?: string | null
-          last_isp?: string | null
-          last_login_at?: string | null
           user_id: string
           username: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          discord_id?: string | null
           id?: string
-          last_ip?: string | null
-          last_city?: string | null
-          last_region?: string | null
-          last_country?: string | null
-          last_isp?: string | null
-          last_login_at?: string | null
           user_id?: string
           username?: string
         }
@@ -349,59 +365,83 @@ export type Database = {
       rapports: {
         Row: {
           author_name: string
-          created_at: string
+          created_at: string | null
+          created_by: string
           id: string
+          rapport_date: string
           summary: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           author_name: string
-          created_at?: string
+          created_at?: string | null
+          created_by: string
           id?: string
+          rapport_date: string
           summary: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           author_name?: string
-          created_at?: string
+          created_at?: string | null
+          created_by?: string
           id?: string
+          rapport_date?: string
           summary?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
       }
       reunions: {
         Row: {
-          created_at: string
+          created_at: string | null
+          description: string | null
           id: string
-          location: string | null
-          participants: string | null
-          reunion_date: string
-          summary: string | null
+          reunion_date: string | null
           title: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
+          description?: string | null
           id?: string
-          location?: string | null
-          participants?: string | null
-          reunion_date: string
-          summary?: string | null
+          reunion_date?: string | null
           title: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
+          description?: string | null
           id?: string
-          location?: string | null
-          participants?: string | null
-          reunion_date?: string
-          summary?: string | null
+          reunion_date?: string | null
           title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_groups: {
+        Row: {
+          created_at: string | null
+          group_name: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_name: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_name?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
@@ -426,24 +466,24 @@ export type Database = {
       }
       votes: {
         Row: {
-          created_at: string
-          entretien_id: string
+          created_at: string | null
+          entretien_id: string | null
           id: string
-          user_id: string
+          user_id: string | null
           vote: boolean
         }
         Insert: {
-          created_at?: string
-          entretien_id: string
+          created_at?: string | null
+          entretien_id?: string | null
           id?: string
-          user_id: string
+          user_id?: string | null
           vote: boolean
         }
         Update: {
-          created_at?: string
-          entretien_id?: string
+          created_at?: string | null
+          entretien_id?: string | null
           id?: string
-          user_id?: string
+          user_id?: string | null
           vote?: boolean
         }
         Relationships: [
@@ -461,6 +501,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_user_to_group: {
+        Args: { p_group_name: string; p_user_id: string }
+        Returns: Json
+      }
+      add_user_to_group_fn: {
+        Args: { p_group_name: string; p_user_id: string }
+        Returns: undefined
+      }
+      create_user_profile: {
+        Args: {
+          p_avatar_url?: string
+          p_discord_id: string
+          p_user_id: string
+          p_username: string
+        }
+        Returns: undefined
+      }
+      create_user_role: {
+        Args: {
+          p_role?: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      get_all_groups: { Args: never; Returns: Json }
+      get_user_groups: {
+        Args: never
+        Returns: {
+          group_name: string
+          user_ids: string[]
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -472,9 +544,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      remove_user_from_group: {
+        Args: { p_group_name: string; p_user_id: string }
+        Returns: Json
+      }
+      remove_user_from_group_fn: {
+        Args: { p_group_name: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "responsable" | "membre"
+      app_role: "admin" | "responsable" | "assistant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -602,7 +682,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "responsable", "membre"],
+      app_role: ["admin", "responsable", "assistant"],
     },
   },
 } as const
+

@@ -22,11 +22,11 @@ const allCards = [
   { title: "Administration", desc: "Gestion du système", icon: Shield, url: "/administration", color: "text-primary", adminOnly: true },
 ];
 
-const roleIcon: Record<AppRole, typeof Shield> = { admin: Shield, responsable: Crown, membre: User };
-const roleColor: Record<AppRole, string> = { admin: "text-primary", responsable: "text-yellow-500", membre: "text-muted-foreground" };
-const roleBadge: Record<AppRole, string> = { admin: "destructive", responsable: "secondary", membre: "outline" };
-const roleOrder: AppRole[] = ["admin", "responsable", "membre"];
-const roleLabel: Record<AppRole, string> = { admin: "Référent", responsable: "Responsable", membre: "Assistant" };
+const roleIcon: Record<AppRole, typeof Shield> = { admin: Shield, responsable: Crown, assistant: User };
+const roleColor: Record<AppRole, string> = { admin: "text-primary", responsable: "text-yellow-500", assistant: "text-muted-foreground" };
+const roleBadge: Record<AppRole, string> = { admin: "destructive", responsable: "secondary", assistant: "outline" };
+const roleOrder: AppRole[] = ["admin", "responsable", "assistant"];
+const roleLabel: Record<AppRole, string> = { admin: "Référent", responsable: "Responsable", assistant: "Assistant" };
 
 export default function Dashboard() {
   const { username, role } = useAuth();
@@ -46,11 +46,11 @@ export default function Dashboard() {
         bannedRes.error ? [] : bannedRes.data.map((b) => b.user_id)
       );
       const rolesMap = new Map(rolesRes.data.map((r) => [r.user_id, r.role as AppRole]));
-      const grouped: Record<AppRole, string[]> = { admin: [], responsable: [], membre: [] };
+      const grouped: Record<AppRole, string[]> = { admin: [], responsable: [], assistant: [] };
       profilesRes.data
         .filter((p) => !bannedIds.has(p.user_id))
         .forEach((p) => {
-          const r = rolesMap.get(p.user_id) ?? "membre";
+          const r = rolesMap.get(p.user_id) ?? "assistant";
           grouped[r].push(p.username);
         });
       return grouped;

@@ -16,7 +16,7 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 const roleConfig: Record<AppRole, { label: string; icon: typeof Shield; color: string; badge: string }> = {
   admin: { label: "Référent", icon: Shield, color: "text-primary", badge: "destructive" },
   responsable: { label: "Responsable", icon: Crown, color: "text-yellow-500", badge: "secondary" },
-  membre: { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" },
+  assistant: { label: "Assistant", icon: User, color: "text-muted-foreground", badge: "outline" },
 };
 
 export default function Administration() {
@@ -52,7 +52,7 @@ export default function Administration() {
       return profilesRes.data.map((p) => ({
         user_id: p.user_id,
         username: p.username,
-        role: (rolesMap.get(p.user_id) ?? "membre") as AppRole,
+        role: (rolesMap.get(p.user_id) ?? "assistant") as AppRole,
         isBanned: bannedMap.has(p.user_id),
         bannedReason: bannedMap.get(p.user_id)?.reason ?? null,
         bannedAt: bannedMap.get(p.user_id)?.banned_at ?? null,
@@ -285,7 +285,7 @@ export default function Administration() {
                         <SelectContent>
                           <SelectItem value="admin">Référent</SelectItem>
                           <SelectItem value="responsable">Responsable</SelectItem>
-                          <SelectItem value="membre">Assistant</SelectItem>
+                          <SelectItem value="assistant">Assistant</SelectItem>
                         </SelectContent>
                       </Select>
                       {u.user_id !== user?.id && !u.isBanned && (
