@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Shield, Crown, User, X, Plus } from "lucide-react";
 import { useState } from "react";
 import type { Database } from "@/integrations/supabase/types";
-import { getGroups, addMemberToGroup, removeMemberFromGroup, type GroupsData } from "@/lib/groups";
+import { fetchGroups, addMemberToGroup, removeMemberFromGroup, type GroupsData } from "@/lib/groups";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -24,7 +24,12 @@ export default function Administration() {
   const queryClient = useQueryClient();
   const [selectedGroupForAdd, setSelectedGroupForAdd] = useState<string | null>(null);
   const [selectedUserForAdd, setSelectedUserForAdd] = useState<string | null>(null);
-  const [groupMembers, setGroupMembers] = useState<GroupsData>(getGroups());
+
+  const { data: groupMembers = {} as GroupsData, isLoading: groupsLoading } = useQuery({
+    queryKey: ["gm-groups"],
+    queryFn: fetchGroups,
+    enabled: role === "admin",
+  });
 
   const isMissingBannedUsersTable = (message?: string) =>
     typeof message === "string" &&
@@ -56,22 +61,32 @@ export default function Administration() {
     enabled: role === "admin",
   });
 
-  const handleAddUserToGroup = (groupName: string) => {
+  const handleAddUserToGroup = async (groupName: string) => {
     if (!selectedUserForAdd) return;
     const selectedUser = users?.find((u) => u.user_id === selectedUserForAdd);
     if (!selectedUser) return;
     
-    const updated = addMemberToGroup(groupName, { id: selectedUser.user_id, name: selectedUser.username });
-    setGroupMembers(updated);
-    setSelectedGroupForAdd(null);
-    setSelectedUserForAdd(null);
-    toast.success("Utilisateur ajouté au groupe");
+    try {
+      await addMemberToGroup(groupName, { id: selectedUser.user_id, name: selectedUser.username });
+      queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["gm-groups-simple"] });
+      setSelectedGroupForAdd(null);
+      setSelectedUserForAdd(null);
+      toast.success("Utilisateur ajouté au groupe");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'ajout");
+    }
   };
 
-  const handleRemoveUserFromGroup = (groupName: string, userId: string) => {
-    const updated = removeMemberFromGroup(groupName, userId);
-    setGroupMembers(updated);
-    toast.success("Utilisateur retiré du groupe");
+  const handleRemoveUserFromGroup = async (groupName: string, userId: string) => {
+    try {
+      await removeMemberFromGroup(groupName, userId);
+      queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["gm-groups-simple"] });
+      toast.success("Utilisateur retiré du groupe");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors du retrait");
+    }
   };
 
   const updateRole = useMutation({

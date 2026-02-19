@@ -1,14 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getGroupsSimple } from "@/lib/groups";
-import { useState, useEffect } from "react";
+import { fetchGroupsSimple } from "@/lib/groups";
+import { useQuery } from "@tanstack/react-query";
 
 export default function GM() {
-  const [groups, setGroups] = useState<Record<string, string[]>>({});
+  const { data: groups = {}, isLoading } = useQuery({
+    queryKey: ["gm-groups-simple"],
+    queryFn: fetchGroupsSimple,
+  });
 
-  useEffect(() => {
-    setGroups(getGroupsSimple());
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-6 p-6">
