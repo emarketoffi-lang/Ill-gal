@@ -28,8 +28,6 @@ import {
   Zap,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getGroupsSimple } from "@/lib/groups";
-import { useState, useEffect } from "react";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -48,11 +46,6 @@ const navItems = [
 
 export function AppSidebar() {
   const { username, role, signOut } = useAuth();
-  const [groupMembers, setGroupMembers] = useState<Record<string, string[]>>({});
-
-  useEffect(() => {
-    setGroupMembers(getGroupsSimple());
-  }, []);
 
   const roleColor = role === "admin" ? "text-primary" : role === "responsable" ? "text-yellow-500" : "text-muted-foreground";
   const roleBadge = role === "admin" ? "destructive" : role === "responsable" ? "secondary" : "outline";

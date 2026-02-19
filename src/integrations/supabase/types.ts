@@ -35,6 +35,30 @@ export type Database = {
         }
         Relationships: []
       }
+      group_members: {
+        Row: {
+          id: string
+          group_name: string
+          user_id: string
+          username: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_name: string
+          user_id: string
+          username: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_name?: string
+          user_id?: string
+          username?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       dissolutions: {
         Row: {
           created_at: string

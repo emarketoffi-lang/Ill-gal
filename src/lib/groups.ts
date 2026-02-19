@@ -1,7 +1,7 @@
-// Gestion des groupes GM via localStorage
-// Les données sont stockées localement et partagées entre les composants
+// Gestion des groupes GM via Supabase
+// Les données sont stockées en base et partagées entre tous les utilisateurs
 
-const STORAGE_KEY = "gm_groups";
+import { supabase } from "@/integrations/supabase/client";
 
 export type GroupMember = {
   id: string;
@@ -10,81 +10,76 @@ export type GroupMember = {
 
 export type GroupsData = Record<string, GroupMember[]>;
 
-const DEFAULT_GROUPS: GroupsData = {
-  "LE CERCLE - ORGA & MC": [],
-  "GNB - GANG & PF": [],
-};
+const DEFAULT_GROUP_NAMES = [
+  "LE CERCLE - ORGA & MC",
+  "GNB - GANG & PF",
+];
 
-// Migration des anciens noms de groupes vers les nouveaux
-const MIGRATIONS: Record<string, string> = {
-  "LE CERCLE": "LE CERCLE - ORGA & MC",
-  "GNB": "GNB - GANG & PF",
-};
+export async function getGroupsFromSupabase(): Promise<GroupsData> {
+  const { data, error } = await supabase
+    .from("group_members")
+    .select("group_name, user_id, username")
+    .order("created_at", { ascending: true });
+
+  const groups: GroupsData = {};
+  for (const name of DEFAULT_GROUP_NAMES) {
+    groups[name] = [];
+  }
+
+  if (error) {
+    console.error("Erreur chargement groupes:", error);
+    return groups;
+  }
+
+  for (const row of data) {
+    if (!groups[row.group_name]) {
+      groups[row.group_name] = [];
+    }
+    groups[row.group_name].push({ id: row.user_id, name: row.username });
+  }
+
+  return groups;
+}
+
+export async function addMemberToGroupSupabase(groupName: string, member: GroupMember): Promise<void> {
+  const { error } = await supabase
+    .from("group_members")
+    .insert({ group_name: groupName, user_id: member.id, username: member.name });
+  if (error) throw error;
+}
+
+export async function removeMemberFromGroupSupabase(groupName: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("group_members")
+    .delete()
+    .eq("group_name", groupName)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+// Format simplifié pour sidebar/GM page: { groupName: [username1, username2] }
+export async function getGroupsSimpleFromSupabase(): Promise<Record<string, string[]>> {
+  const groups = await getGroupsFromSupabase();
+  const result: Record<string, string[]> = {};
+  for (const [name, members] of Object.entries(groups)) {
+    result[name] = members.map((m) => m.name);
+  }
+  return result;
+}
+
+// Fonctions legacy synchrones conservées pour compatibilité temporaire
+const STORAGE_KEY = "gm_groups";
 
 export function getGroups(): GroupsData {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_GROUPS));
-      return DEFAULT_GROUPS;
-    }
-    let groups: GroupsData = JSON.parse(raw);
-    let changed = false;
-
-    // Migrer les anciens noms de groupes
-    for (const [oldName, newName] of Object.entries(MIGRATIONS)) {
-      if (groups[oldName] && !groups[newName]) {
-        groups[newName] = groups[oldName];
-        delete groups[oldName];
-        changed = true;
-      }
-    }
-
-    // S'assurer que tous les groupes par défaut existent
-    for (const key of Object.keys(DEFAULT_GROUPS)) {
-      if (!groups[key]) {
-        groups[key] = [];
-        changed = true;
-      }
-    }
-
-    if (changed) {
-      saveGroups(groups);
-    }
-
-    return groups;
+    if (!raw) return Object.fromEntries(DEFAULT_GROUP_NAMES.map((n) => [n, []]));
+    return JSON.parse(raw);
   } catch {
-    return DEFAULT_GROUPS;
+    return Object.fromEntries(DEFAULT_GROUP_NAMES.map((n) => [n, []]));
   }
 }
 
-export function saveGroups(groups: GroupsData): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
-}
-
-export function addMemberToGroup(groupName: string, member: GroupMember): GroupsData {
-  const groups = getGroups();
-  if (!groups[groupName]) {
-    groups[groupName] = [];
-  }
-  // Pas de doublon
-  if (!groups[groupName].some((m) => m.id === member.id)) {
-    groups[groupName].push(member);
-  }
-  saveGroups(groups);
-  return groups;
-}
-
-export function removeMemberFromGroup(groupName: string, userId: string): GroupsData {
-  const groups = getGroups();
-  if (groups[groupName]) {
-    groups[groupName] = groups[groupName].filter((m) => m.id !== userId);
-  }
-  saveGroups(groups);
-  return groups;
-}
-
-// Format simplifié pour sidebar/GM page: { groupName: [username1, username2] }
 export function getGroupsSimple(): Record<string, string[]> {
   const groups = getGroups();
   const result: Record<string, string[]> = {};
