@@ -1,7 +1,7 @@
-// Gestion des groupes GM via la colonne gm_group de la table profiles
-// Utilise .from("profiles") directement (déjà dans le cache PostgREST)
+// Gestion des groupes GM via localStorage
+// Les données sont stockées localement et partagées entre les composants
 
-import { supabase } from "@/integrations/supabase/client";
+const STORAGE_KEY = "gm_groups";
 
 export type GroupMember = {
   id: string;
@@ -10,58 +10,83 @@ export type GroupMember = {
 
 export type GroupsData = Record<string, GroupMember[]>;
 
-export const GROUP_NAMES = [
-  "LE CERCLE - ORGA & MC",
-  "GNB - GANG & PF",
-];
+const DEFAULT_GROUPS: GroupsData = {
+  "LE CERCLE - ORGA & MC": [],
+  "GNB - GANG & PF": [],
+};
 
-// Récupérer les groupes avec id + nom (pour Administration)
-export async function getGroupsFromSupabase(): Promise<GroupsData> {
-  const groups: GroupsData = {};
-  for (const name of GROUP_NAMES) {
-    groups[name] = [];
-  }
+// Migration des anciens noms de groupes vers les nouveaux
+const MIGRATIONS: Record<string, string> = {
+  "LE CERCLE": "LE CERCLE - ORGA & MC",
+  "GNB": "GNB - GANG & PF",
+};
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("user_id, username, gm_group")
-    .not("gm_group", "is", null);
-
-  if (error) {
-    console.error("Erreur chargement groupes:", error);
-    return groups;
-  }
-
-  for (const row of data ?? []) {
-    if (row.gm_group && groups[row.gm_group]) {
-      groups[row.gm_group].push({ id: row.user_id, name: row.username });
+export function getGroups(): GroupsData {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_GROUPS));
+      return DEFAULT_GROUPS;
     }
-  }
+    let groups: GroupsData = JSON.parse(raw);
+    let changed = false;
 
+    // Migrer les anciens noms de groupes
+    for (const [oldName, newName] of Object.entries(MIGRATIONS)) {
+      if (groups[oldName] && !groups[newName]) {
+        groups[newName] = groups[oldName];
+        delete groups[oldName];
+        changed = true;
+      }
+    }
+
+    // S'assurer que tous les groupes par défaut existent
+    for (const key of Object.keys(DEFAULT_GROUPS)) {
+      if (!groups[key]) {
+        groups[key] = [];
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      saveGroups(groups);
+    }
+
+    return groups;
+  } catch {
+    return DEFAULT_GROUPS;
+  }
+}
+
+export function saveGroups(groups: GroupsData): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
+}
+
+export function addMemberToGroup(groupName: string, member: GroupMember): GroupsData {
+  const groups = getGroups();
+  if (!groups[groupName]) {
+    groups[groupName] = [];
+  }
+  // Pas de doublon
+  if (!groups[groupName].some((m) => m.id === member.id)) {
+    groups[groupName].push(member);
+  }
+  saveGroups(groups);
   return groups;
 }
 
-// Ajouter un membre à un groupe
-export async function addMemberToGroupSupabase(groupName: string, member: GroupMember): Promise<void> {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ gm_group: groupName })
-    .eq("user_id", member.id);
-  if (error) throw error;
+export function removeMemberFromGroup(groupName: string, userId: string): GroupsData {
+  const groups = getGroups();
+  if (groups[groupName]) {
+    groups[groupName] = groups[groupName].filter((m) => m.id !== userId);
+  }
+  saveGroups(groups);
+  return groups;
 }
 
-// Retirer un membre d'un groupe (met gm_group à null)
-export async function removeMemberFromGroupSupabase(groupName: string, userId: string): Promise<void> {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ gm_group: null })
-    .eq("user_id", userId);
-  if (error) throw error;
-}
-
-// Format simplifié pour la page GM : { groupName: [username1, username2] }
-export async function getGroupsSimpleFromSupabase(): Promise<Record<string, string[]>> {
-  const groups = await getGroupsFromSupabase();
+// Format simplifié pour sidebar/GM page: { groupName: [username1, username2] }
+export function getGroupsSimple(): Record<string, string[]> {
+  const groups = getGroups();
   const result: Record<string, string[]> = {};
   for (const [name, members] of Object.entries(groups)) {
     result[name] = members.map((m) => m.name);
