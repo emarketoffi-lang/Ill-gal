@@ -1,5 +1,5 @@
-// Gestion des groupes GM via la colonne gm_group de profiles (Supabase)
-// Utilise la table profiles qui est déjà reconnue par le cache PostgREST
+// Gestion des groupes GM via fonctions RPC Supabase (SECURITY DEFINER)
+// Les RPC contournent le cache PostgREST pour l'accès aux données
 import { supabase } from "@/integrations/supabase/client";
 
 export type GroupMember = {
@@ -12,51 +12,46 @@ export type GroupsData = Record<string, GroupMember[]>;
 export const GROUP_NAMES = ["LE CERCLE - ORGA & MC", "GNB - GANG & PF"] as const;
 export type GroupName = (typeof GROUP_NAMES)[number];
 
-// Récupérer tous les groupes depuis profiles.gm_group
+// Récupérer tous les groupes via RPC get_gm_groups
 export async function fetchGroups(): Promise<GroupsData> {
   const result: GroupsData = {};
   for (const name of GROUP_NAMES) {
     result[name] = [];
   }
 
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("user_id, username, gm_group")
-    .not("gm_group", "is", null);
+  const { data, error } = await supabase.rpc("get_gm_groups");
 
   if (error) {
     console.warn("Erreur chargement groupes:", error.message);
     return result;
   }
 
-  for (const profile of data ?? []) {
-    const groupName = profile.gm_group as string;
+  for (const row of data ?? []) {
+    const groupName = row.gm_group;
     if (!result[groupName]) {
       result[groupName] = [];
     }
-    result[groupName].push({ id: profile.user_id, name: profile.username });
+    result[groupName].push({ id: row.user_id, name: row.username });
   }
 
   return result;
 }
 
-// Ajouter un utilisateur à un groupe (update profiles.gm_group)
+// Ajouter un utilisateur à un groupe via RPC set_gm_group
 export async function addMemberToGroup(groupName: string, userId: string): Promise<void> {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ gm_group: groupName })
-    .eq("user_id", userId);
-
+  const { error } = await supabase.rpc("set_gm_group", {
+    p_user_id: userId,
+    p_group_name: groupName,
+  });
   if (error) throw new Error(error.message);
 }
 
-// Retirer un utilisateur d'un groupe (set gm_group = null)
+// Retirer un utilisateur d'un groupe via RPC set_gm_group(null)
 export async function removeMemberFromGroup(userId: string): Promise<void> {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ gm_group: null })
-    .eq("user_id", userId);
-
+  const { error } = await supabase.rpc("set_gm_group", {
+    p_user_id: userId,
+    p_group_name: null,
+  });
   if (error) throw new Error(error.message);
 }
 

@@ -65,7 +65,8 @@ export default function Administration() {
     if (!selectedUserForAdd) return;
     try {
       await addMemberToGroup(groupName, selectedUserForAdd);
-      queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
+      await queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
+      await queryClient.refetchQueries({ queryKey: ["gm-groups"] });
       setSelectedGroupForAdd(null);
       setSelectedUserForAdd(null);
       toast.success("Utilisateur ajouté au groupe");
@@ -77,7 +78,8 @@ export default function Administration() {
   const handleRemoveUserFromGroup = async (userId: string) => {
     try {
       await removeMemberFromGroup(userId);
-      queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
+      await queryClient.invalidateQueries({ queryKey: ["gm-groups"] });
+      await queryClient.refetchQueries({ queryKey: ["gm-groups"] });
       toast.success("Utilisateur retiré du groupe");
     } catch (err: any) {
       toast.error(err.message || "Erreur lors du retrait");
