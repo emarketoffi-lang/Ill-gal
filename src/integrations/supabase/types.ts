@@ -308,6 +308,7 @@ export type Database = {
           id: string
           user_id: string
           username: string
+          approved: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -317,6 +318,7 @@ export type Database = {
           id?: string
           user_id: string
           username: string
+          approved?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -326,6 +328,7 @@ export type Database = {
           id?: string
           user_id?: string
           username?: string
+          approved?: boolean
         }
         Relationships: []
       }

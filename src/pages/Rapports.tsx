@@ -57,7 +57,13 @@ export default function Rapports() {
       const { error } = await supabase.from("rapports").update({ author_name: authorName, summary }).eq("id", editing.id);
       if (error) toast.error(error.message); else { toast.success("Mis à jour"); reset(); fetch_(); }
     } else {
-      const { error } = await supabase.from("rapports").insert({ author_name: authorName, summary, user_id: user!.id });
+      const { error } = await supabase.from("rapports").insert({
+        author_name: authorName,
+        summary,
+        user_id: user!.id,
+        rapport_date: new Date().toISOString(),
+        created_by: user!.id
+      });
       if (error) toast.error(error.message); else { toast.success("Rapport ajouté"); reset(); fetch_(); }
     }
   };

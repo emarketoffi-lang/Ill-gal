@@ -68,12 +68,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const banned = await enforceBanIfNeeded(userId);
     if (banned) return;
 
-    const [roleRes, profileRes] = await Promise.all([
-      supabase.rpc("get_user_role", { _user_id: userId }),
-      supabase.from("profiles").select("username").eq("user_id", userId).single(),
-    ]);
-    if (roleRes.data) setRole(roleRes.data);
-    if (profileRes.data) setUsername(profileRes.data.username);
+    // Vérifier si l'utilisateur est approuvé
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("username, approved")
+      .eq("user_id", userId)
+      .single();
+    if (profileError) throw profileError;
+    if (!profile.approved) {
+      await supabase.auth.signOut();
+      clearLocalAuthState();
+      toast.error("Votre compte est en attente d'approbation par un administrateur.");
+      return;
+    }
+
+    const { data: roleData } = await supabase.rpc("get_user_role", { _user_id: userId });
+    if (roleData) setRole(roleData);
+    setUsername(profile.username);
   };
 
   useEffect(() => {

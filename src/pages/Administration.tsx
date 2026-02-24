@@ -39,7 +39,7 @@ export default function Administration() {
     queryKey: ["admin-users"],
     queryFn: async () => {
       const [profilesRes, rolesRes, bannedRes] = await Promise.all([
-        supabase.from("profiles").select("user_id, username, avatar_url"),
+        supabase.from("profiles").select("user_id, username, avatar_url, approved"),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("banned_users").select("user_id, reason, banned_at"),
       ]);
@@ -56,9 +56,21 @@ export default function Administration() {
         isBanned: bannedMap.has(p.user_id),
         bannedReason: bannedMap.get(p.user_id)?.reason ?? null,
         bannedAt: bannedMap.get(p.user_id)?.banned_at ?? null,
+        approved: p.approved,
       }));
     },
     enabled: role === "admin",
+  });
+  const approveUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.from("profiles").update({ approved: true }).eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      toast.success("Utilisateur approuvé");
+    },
+    onError: (err: any) => toast.error(err.message),
   });
 
   const handleAddUserToGroup = async (groupName: string) => {
@@ -256,78 +268,114 @@ export default function Administration() {
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         ) : (
-          <div className="grid gap-3">
-            {users?.map((u) => {
-              const cfg = roleConfig[u.role];
-              return (
-                <Card key={u.user_id} className="border-border/50 bg-card/80">
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg bg-muted/50 ${cfg.color}`}>
-                        <cfg.icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <p className="font-semibold font-rajdhani text-lg">{u.username}</p>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={cfg.badge as any} className="text-[10px] uppercase tracking-widest">
-                            {cfg.label}
-                          </Badge>
-                          {u.isBanned && (
-                            <Badge variant="destructive" className="text-[10px] uppercase tracking-widest">
-                              Banni
+          <>
+            {/* Utilisateurs en attente d'approbation */}
+            {users?.some((u) => !u.approved) && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-2">En attente d'approbation</h3>
+                <div className="grid gap-3">
+                  {users.filter((u) => !u.approved).map((u) => (
+                    <Card key={u.user_id} className="border-yellow-400/50 bg-yellow-50/80">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-lg bg-muted/50">
+                            <User className="h-5 w-5 text-yellow-500" />
+                          </div>
+                          <div>
+                            <p className="font-semibold font-rajdhani text-lg">{u.username}</p>
+                            <Badge variant="outline" className="text-[10px] uppercase tracking-widest text-yellow-700 border-yellow-400">
+                              En attente
                             </Badge>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="default"
+                          onClick={() => approveUser.mutate(u.user_id)}
+                        >
+                          Approuver
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Utilisateurs approuvés */}
+            <div className="grid gap-3">
+              {users?.filter((u) => u.approved).map((u) => {
+                const cfg = roleConfig[u.role];
+                return (
+                  <Card key={u.user_id} className="border-border/50 bg-card/80">
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg bg-muted/50 ${cfg.color}`}>
+                          <cfg.icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold font-rajdhani text-lg">{u.username}</p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={cfg.badge as any} className="text-[10px] uppercase tracking-widest">
+                              {cfg.label}
+                            </Badge>
+                            {u.isBanned && (
+                              <Badge variant="destructive" className="text-[10px] uppercase tracking-widest">
+                                Banni
+                              </Badge>
+                            )}
+                          </div>
+                          {u.isBanned && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {u.bannedReason ? `Raison: ${u.bannedReason}` : "Aucune raison"}
+                            </p>
                           )}
                         </div>
-                        {u.isBanned && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {u.bannedReason ? `Raison: ${u.bannedReason}` : "Aucune raison"}
-                          </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={u.role}
+                          onValueChange={(val) => updateRole.mutate({ userId: u.user_id, newRole: val as AppRole })}
+                        >
+                          <SelectTrigger className="w-[160px] bg-muted/50 border-border">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Référent</SelectItem>
+                            <SelectItem value="responsable">Responsable</SelectItem>
+                            <SelectItem value="membre">Assistant</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {u.user_id !== user?.id && !u.isBanned && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => {
+                              const reason = window.prompt("Raison du ban (optionnel):")?.trim() ?? null;
+                              banUser.mutate({ targetUserId: u.user_id, reason: reason || null });
+                            }}
+                          >
+                            Ban
+                          </Button>
+                        )}
+                        {u.user_id !== user?.id && u.isBanned && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => unbanUser.mutate(u.user_id)}
+                          >
+                            Unban
+                          </Button>
                         )}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={u.role}
-                        onValueChange={(val) => updateRole.mutate({ userId: u.user_id, newRole: val as AppRole })}
-                      >
-                        <SelectTrigger className="w-[160px] bg-muted/50 border-border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Référent</SelectItem>
-                          <SelectItem value="responsable">Responsable</SelectItem>
-                          <SelectItem value="membre">Assistant</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {u.user_id !== user?.id && !u.isBanned && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => {
-                            const reason = window.prompt("Raison du ban (optionnel):")?.trim() ?? null;
-                            banUser.mutate({ targetUserId: u.user_id, reason: reason || null });
-                          }}
-                        >
-                          Ban
-                        </Button>
-                      )}
-                      {u.user_id !== user?.id && u.isBanned && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="secondary"
-                          onClick={() => unbanUser.mutate(u.user_id)}
-                        >
-                          Unban
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
