@@ -296,7 +296,8 @@ export default function Administration() {
                             onClick={async () => {
                               if (window.confirm('Refuser et supprimer ce compte ?')) {
                                 await supabase.from('profiles').delete().eq('user_id', u.user_id);
-                                queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                                await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                                await queryClient.refetchQueries({ queryKey: ["admin-users"] });
                                 toast.success('Utilisateur refusé et supprimé');
                               }
                             }}
