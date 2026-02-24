@@ -275,27 +275,43 @@ export default function Administration() {
                 <h3 className="text-lg font-semibold mb-2">En attente d'approbation</h3>
                 <div className="grid gap-3">
                   {users.filter((u) => !u.approved).map((u) => (
-                    <Card key={u.user_id} className="border-yellow-400/50 bg-yellow-50/80">
+                    <Card key={u.user_id} className="border-2 border-yellow-600 bg-[#23231a] shadow-md">
                       <CardContent className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-muted/50">
-                            <User className="h-5 w-5 text-yellow-500" />
+                        <div className="flex items-center gap-4">
+                          <div className="p-3 rounded-full bg-yellow-900/40 border border-yellow-700">
+                            <User className="h-6 w-6 text-yellow-400" />
                           </div>
                           <div>
-                            <p className="font-semibold font-rajdhani text-lg">{u.username}</p>
-                            <Badge variant="outline" className="text-[10px] uppercase tracking-widest text-yellow-700 border-yellow-400">
+                            <p className="font-semibold font-rajdhani text-lg text-yellow-100 tracking-wide">{u.username}</p>
+                            <Badge variant="outline" className="text-[11px] uppercase tracking-widest text-yellow-300 border-yellow-600 bg-yellow-900/20 px-2 py-0.5">
                               En attente
                             </Badge>
                           </div>
                         </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="default"
-                          onClick={() => approveUser.mutate(u.user_id)}
-                        >
-                          Approuver
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={async () => {
+                              if (window.confirm('Refuser et supprimer ce compte ?')) {
+                                await supabase.from('profiles').delete().eq('user_id', u.user_id);
+                                queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+                                toast.success('Utilisateur refusé et supprimé');
+                              }
+                            }}
+                          >
+                            Refuser
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="default"
+                            onClick={() => approveUser.mutate(u.user_id)}
+                          >
+                            Approuver
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
